@@ -7,11 +7,12 @@
 #include "../base/exception.h"
 #include "storage.h"
 #include "shape.h"
+#include "../expression/expression.h"
 
 namespace el {
 // general declaration
 template<index_t Dim, typename Dtype>
-struct Tensor {
+struct Tensor: public Exp<Tensor<Dim, Dtype>, Dtype> {
     Storage<Dtype> storage_;
     Shape<Dim> shape_;
     index_t stride_[Dim];
@@ -40,6 +41,9 @@ struct Tensor {
     Tensor<Dim, Dtype> slice(index_t start_idx, index_t end_idx, index_t dim) const;
     Tensor<Dim, Dtype> transpose(index_t dim1, index_t dim2) const;
     bool contiguous(void) const;
+    // method for implementing template expression
+    Dtype eval(index_t idx) const;
+    template<typename Etype> Tensor<Dim, Dtype>& operator=(const Exp<Etype, Dtype>& src);
     // friend
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dim, Dtype1>& t);
 };
@@ -126,13 +130,23 @@ inline bool Tensor<Dim, Dtype>::contiguous(void) const {
     return true;
 }
 
+template<index_t Dim, typename Dtype>
+inline Dtype Tensor<Dim, Dtype>::eval(index_t idx) const {return storage_[idx];}
+template<index_t Dim, typename Dtype> template<typename Etype>
+inline Tensor<Dim, Dtype>& Tensor<Dim, Dtype>::operator=(const Exp<Etype, Dtype>& src) {
+    const Etype &src_r = src.self();
+    for(index_t i = 0; i < shape_.dsize(); i++) 
+        storage_[i] = src_r.eval(i);
+    return *this;
+}
+
 } // namespace el (general definition)
 
 
 namespace el {
 // specialized definition
 template<typename Dtype>
-struct Tensor<1, Dtype> {
+struct Tensor<1, Dtype>: public Exp<Tensor<1, Dtype>, Dtype> {
     Storage<Dtype> storage_;
     int shape_;
     int stride_;
@@ -167,7 +181,14 @@ struct Tensor<1, Dtype> {
         return Tensor<1, Dtype>(storage, shape, &stride_);
     }
     bool contiguous(void) const { return stride_ == 1;}
-
+    // method for implementing template expression
+    Dtype eval(index_t idx) const {return storage_[idx]; }
+    template<typename Etype> inline Tensor<1, Dtype>& operator=(const Exp<Etype, Dtype>& src) {
+        const Etype &src_r = src.self();
+        for(index_t i = 0; i < shape_; i++) 
+            storage_[i] = src_r.eval(i);
+        return *this;
+    }
     // friend
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<1, Dtype1>& t);
 };

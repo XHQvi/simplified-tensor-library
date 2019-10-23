@@ -32,9 +32,11 @@ void print10(index_t t) {
 
 int main()
 {
-	auto ten1 = rand(Shape<3>{3, 2, 3});
-	auto ten2 = arange(16);
+	auto ten1 = rand(Shape<2>{2, 3});
 	print10(ten1);
-	print10(ten2);
+
+	ten1 = op::sigmoid(ten1);
+	print10(ten1);
+
 	return 0;
 }

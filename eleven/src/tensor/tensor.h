@@ -15,7 +15,6 @@ Tensor<1, DataType::int_t> arange(index_t end);
 template<index_t Dim> Tensor<Dim, DataType::float_t> rand(const Shape<Dim>& shape);
 
 } // namespace el
-#endif
 
 namespace el {
 // definition
@@ -45,3 +44,6 @@ Tensor<Dim, DataType::float_t> rand(const Shape<Dim>& shape) {
 }
 
 } // namespace el
+
+
+#endif
