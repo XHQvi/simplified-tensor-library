@@ -5,27 +5,29 @@
 
 namespace el {
 
-template<typename SubType, typename Dtype> struct Exp;
-template<typename OP, typename ROtype, typename LOtype, typename Dtype> struct BinaryMapExp;
+template<typename Dtype> struct Exp;
+template<typename Dtype> struct BinaryExp;
 
 namespace op {
 
 template<typename Dtype>
-struct AddOP {
-	static Dtype map(Dtype rvalue, Dtype lvalue) {return rvalue + lvalue;}
+struct AddExp: public BinaryExp<Dtype> {
+	AddExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): BinaryExp<Dtype>(roperand, loperand){}
+	Dtype eval(index_t* ids) const {return this->roperand_.eval(ids) + this->loperand_.eval(ids);}
 };
-template<typename ROtype, typename LOtype, typename Dtype>
-inline BinaryMapExp<AddOP<Dtype>, ROtype, LOtype, Dtype> operator+(const Exp<ROtype, Dtype>& roperand, const Exp<LOtype, Dtype>& loperand) {
-	return BinaryMapExp<AddOP<Dtype>, ROtype, LOtype, Dtype>(roperand.self(), loperand.self());
+template<typename Dtype>
+inline AddExp<Dtype> operator+(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
+	return AddExp<Dtype>(roperand, loperand);
 }
 
 template<typename Dtype>
-struct SubOP {
-	static Dtype map(Dtype rvalue, Dtype lvalue) {return rvalue - lvalue;}
+struct SubExp: public BinaryExp<Dtype> {
+	SubExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): BinaryExp<Dtype>(roperand, loperand){}
+	Dtype eval(index_t* ids) const {return this->roperand_.eval(ids) - this->loperand_.eval(ids);}
 };
-template<typename ROtype, typename LOtype, typename Dtype>
-inline BinaryMapExp<SubOP<Dtype>, ROtype, LOtype, Dtype> operator-(const Exp<ROtype, Dtype>& roperand, const Exp<LOtype, Dtype>& loperand) {
-	return BinaryMapExp<SubOP<Dtype>, ROtype, LOtype, Dtype>(roperand.self(), loperand.self());
+template<typename Dtype>
+inline SubExp<Dtype> operator-(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
+	return SubExp<Dtype>(roperand, loperand);
 }
 
 

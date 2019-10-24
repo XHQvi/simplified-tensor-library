@@ -6,27 +6,29 @@
 
 namespace el {
 
-template<typename SubType, typename Dtype> struct Exp;
-template<typename OP, typename Otype, typename Dtype> struct UnaryMapExp;
+template<typename Dtype> struct Exp;
+template<typename Dtype> struct UnaryExp;
 
 namespace op {
 
 template<typename Dtype>
-struct AbsOP {
-	static Dtype map(Dtype value) {return value > 0 ? value: (-value);}
+struct AbsExp: public UnaryExp<Dtype> {
+	explicit AbsExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
+	Dtype eval(index_t* ids) const {return std::abs(this->operand_.eval(ids));}
 };
-template<typename Otype, typename Dtype>
-inline UnaryMapExp<AbsOP<Dtype>, Otype, Dtype> abs(const Exp<Otype, Dtype>& operand) {
-	return UnaryMapExp<AbsOP<Dtype>, Otype, Dtype>(operand.self());
+template<typename Dtype>
+inline AbsExp<Dtype> abs(const Exp<Dtype>& operand) {
+	return AbsExp<Dtype>(operand);
 }
 
 template<typename Dtype>
-struct SigmoidOP {
-	static Dtype map(Dtype value) {return 1 / (1+std::exp(-value));}
+struct SigmoidExp: public UnaryExp<Dtype> {
+	explicit SigmoidExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
+	Dtype eval(index_t* ids) const {return 1 / (1+std::exp(-this->operand_.eval(ids)));}
 };
-template<typename Otype, typename Dtype>
-inline UnaryMapExp<SigmoidOP<Dtype>, Otype, Dtype> sigmoid(const Exp<Otype, Dtype>& operand) {
-	return UnaryMapExp<SigmoidOP<Dtype>, Otype, Dtype>(operand.self());
+template<typename Dtype>
+inline SigmoidExp<Dtype> sigmoid(const Exp<Dtype>& operand) {
+	return SigmoidExp<Dtype>(operand);
 }
 
 } // namespace op

@@ -9,29 +9,24 @@
 
 namespace el {
 
-template<typename SubType, typename Dtype>
+template<typename Dtype>
 struct Exp {
-	inline const SubType& self() const {return *static_cast<const SubType*>(this);}
+	virtual Dtype eval(index_t* ids) const = 0;
 };
 
-// OP: operator; Otype: operand type; Dtype: data type;
-template<typename OP, typename Otype, typename Dtype>
-struct UnaryMapExp: public Exp<UnaryMapExp<OP, Otype, Dtype>, Dtype> {
-	const Otype& operand_;
-	UnaryMapExp(const Otype& operand): operand_(operand){}
-	Dtype eval(index_t* ids) const {return OP::map(operand_.eval(ids));}
-	// Dtype eval(initializer_list<index_t> ids) {return OP::map(operand_.eval(ids));}
+template<typename Dtype>
+struct UnaryExp: public Exp<Dtype> {
+	const Exp<Dtype>& operand_;
+	UnaryExp(const Exp<Dtype>& operand): operand_(operand){}
 };
 
-// ROtype/LOtype: right/left operand type;
-template<typename OP, typename ROtype, typename LOtype, typename Dtype>
-struct BinaryMapExp: public Exp<BinaryMapExp<OP, ROtype, LOtype, Dtype>, Dtype> {
-	const ROtype& roperand_;
-	const LOtype& loperand_;
-	BinaryMapExp(const ROtype& roperand, const LOtype& loperand): roperand_(roperand), loperand_(loperand){}
-	Dtype eval(index_t* ids) const {return OP::map(roperand_.eval(ids), loperand_.eval(ids));}
-	// Dtype eval(initializer_list<index_t> ids) {return OP::map(roperand_.eval(ids), loperand_.eval(ids));}
+template<typename Dtype>
+struct BinaryExp: public Exp<Dtype> {
+	const Exp<Dtype>& roperand_;
+	const Exp<Dtype>& loperand_;
+	BinaryExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): roperand_(roperand), loperand_(loperand){}
 };
+
 } // namespace el
 
 
