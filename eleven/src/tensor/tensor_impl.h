@@ -24,9 +24,11 @@ struct Tensor: public Exp<Tensor<Dim, Dtype>, Dtype> {
             stride_[i] = stride[i];
     }
     Tensor(const Storage<Dtype>& storage, const Shape<Dim>& shape): storage_(storage), shape_(shape) {
-		for(index_t i = 1; i <= shape_.dim(); i++)
-        	stride_[i - 1] = shape_.subsize(i);
-	}
+        for(index_t i = 0; i < shape_.dim(); i++) {
+            if(shape_[i] == 1) stride_[i] = 0; // for broadcasting
+            else stride_[i] = shape_.subsize(i + 1);
+        }
+    }
     Tensor(const Dtype* data, const Shape<Dim>& shape): Tensor(Storage<Dtype>(data, shape.dsize()), shape){}
     explicit Tensor(const Shape<Dim>& shape): Tensor(Storage<Dtype>(shape.dsize()), shape) {}
     template<index_t Dim1> Tensor(const Tensor<Dim1, Dtype>& other, const Shape<Dim>& shape): Tensor(other.storage_, shape) {}
@@ -43,7 +45,8 @@ struct Tensor: public Exp<Tensor<Dim, Dtype>, Dtype> {
     Tensor<Dim, Dtype> transpose(index_t dim1, index_t dim2) const;
     bool contiguous(void) const;
     // method for implementing template expression
-    Dtype eval(index_t idx) const;
+    const Dtype& eval(index_t* ids) const;
+    Dtype& eval(index_t* ids);
     template<typename Etype> Tensor<Dim, Dtype>& operator=(const Exp<Etype, Dtype>& src);
     // friend
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dim, Dtype1>& t);
@@ -132,12 +135,38 @@ inline bool Tensor<Dim, Dtype>::contiguous(void) const {
 }
 
 template<index_t Dim, typename Dtype>
-inline Dtype Tensor<Dim, Dtype>::eval(index_t idx) const {return storage_[idx];}
+inline const Dtype& Tensor<Dim, Dtype>::eval(index_t* ids) const {
+    int offset = 0;
+    for(index_t i = 0; i < Dim; i++)
+        offset += stride_[i] * ids[i];
+    return storage_[offset];
+}
+
+template<index_t Dim, typename Dtype>
+inline Dtype& Tensor<Dim, Dtype>::eval(index_t* ids) {
+    int offset = 0;
+    for(index_t i = 0; i < Dim; i++)
+        offset += stride_[i] * ids[i];
+    return storage_[offset];
+}
+
 template<index_t Dim, typename Dtype> template<typename Etype>
 inline Tensor<Dim, Dtype>& Tensor<Dim, Dtype>::operator=(const Exp<Etype, Dtype>& src) {
     const Etype &src_r = src.self();
-    for(index_t i = 0; i < shape_.dsize(); i++) 
-        storage_[i] = src_r.eval(i);
+    index_t loc[Dim];
+    index_t idx = 0;
+    for(int i = 0; i < Dim; i++) loc[i] = -1;
+
+    while(idx >= 0)  {
+        if(idx == Dim) {
+            eval(loc) = src_r.eval(loc);
+            idx --; 
+        } else if(loc[idx] < shape_[idx] - 1) {
+            loc[idx] ++;
+            if(idx < Dim - 1) loc[idx+1] = -1;
+            idx++;
+        } else idx--;
+    }
     return *this;
 }
 

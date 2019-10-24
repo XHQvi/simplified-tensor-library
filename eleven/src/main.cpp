@@ -46,6 +46,8 @@ int main()
 
 	ten3 = ten1 + ten2;
 	print10(ten3);
+	ten3 = ten1 - ten2;
+	print10(ten3);
 	ten3 = ten1 + ten2 - ten3;
 	print10(ten3);
 	ten3 = op::sigmoid(ten1) + ten2;
@@ -53,5 +55,10 @@ int main()
 	ten3 = ten2 + op::sigmoid(ten1);
 	print10(ten3);
 
+
+	auto ten4 = arange(16);
+	print10(ten4);
+	Tensor<3, int> ten5(ten4, {4, 1, 4});
+	print10(ten5);
 	return 0;
 }

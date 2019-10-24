@@ -19,7 +19,7 @@ template<typename OP, typename Otype, typename Dtype>
 struct UnaryMapExp: public Exp<UnaryMapExp<OP, Otype, Dtype>, Dtype> {
 	const Otype& operand_;
 	UnaryMapExp(const Otype& operand): operand_(operand){}
-	Dtype eval(index_t idx) const {return OP::map(operand_.eval(idx));}
+	Dtype eval(index_t* ids) const {return OP::map(operand_.eval(ids));}
 	// Dtype eval(initializer_list<index_t> ids) {return OP::map(operand_.eval(ids));}
 };
 
@@ -29,7 +29,7 @@ struct BinaryMapExp: public Exp<BinaryMapExp<OP, ROtype, LOtype, Dtype>, Dtype> 
 	const ROtype& roperand_;
 	const LOtype& loperand_;
 	BinaryMapExp(const ROtype& roperand, const LOtype& loperand): roperand_(roperand), loperand_(loperand){}
-	Dtype eval(index_t idx) const {return OP::map(roperand_.eval(idx), loperand_.eval(idx));}
+	Dtype eval(index_t* ids) const {return OP::map(roperand_.eval(ids), loperand_.eval(ids));}
 	// Dtype eval(initializer_list<index_t> ids) {return OP::map(roperand_.eval(ids), loperand_.eval(ids));}
 };
 } // namespace el
