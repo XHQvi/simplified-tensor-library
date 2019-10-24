@@ -38,27 +38,18 @@ int main()
 		data2[i] = i * 0.7;
 	}
 
-	Tensor<3, double> ten1(data1, {2, 2, 2});
-	Tensor<3, double> ten2(data2, {2, 2, 2});
-	Tensor<3, double> ten3({2, 2, 2});
+	Tensor<1, double> ten1(data1, {8});
+	Tensor<1, double> ten2(data2, {8});
+	Tensor<1, double> ten3({8});
+
 	print10(ten1);
 	print10(ten2);
-
 	ten3 = ten1 + ten2;
 	print10(ten3);
-	ten3 = ten1 - ten2;
+	ten3 = op::sigmoid(ten1);
 	print10(ten3);
-	ten3 = ten1 + ten2 - ten3;
-	print10(ten3);
-	ten3 = op::sigmoid(ten1) + ten2;
-	print10(ten3);
-	ten3 = ten2 + op::sigmoid(ten1);
+	ten3 = ten1 + op::sigmoid(ten1);
 	print10(ten3);
 
-
-	auto ten4 = arange(16);
-	print10(ten4);
-	Tensor<3, int> ten5(ten4, {4, 1, 4});
-	print10(ten5);
 	return 0;
 }

@@ -188,6 +188,7 @@ struct Tensor<1, Dtype>: public Exp<Tensor<1, Dtype>, Dtype> {
         : storage_(storage), shape_(shape[0]), stride_(1) {}
     explicit Tensor(const Shape<1>& shape): Tensor(Storage<Dtype>(shape.dsize()), shape) {}
     template<index_t Dim1> Tensor(const Tensor<Dim1, Dtype>& other, const Shape<1>& shape): Tensor(other.storage_, shape) {}
+    Tensor(const Dtype* data, const Shape<1>& shape): Tensor(Storage<Dtype>(data, shape.dsize()), shape){}
     Tensor(const Tensor& other) = default;
     Tensor(Tensor&& other) = default;
 
@@ -212,11 +213,12 @@ struct Tensor<1, Dtype>: public Exp<Tensor<1, Dtype>, Dtype> {
     }
     bool contiguous(void) const { return stride_ == 1;}
     // method for implementing template expression
-    Dtype eval(index_t idx) const {return storage_[idx]; }
+    const Dtype& eval(index_t* ids) const {return storage_[*ids * stride_]; }
+    Dtype& eval(index_t* ids) {return storage_[*ids * stride_]; }
     template<typename Etype> inline Tensor<1, Dtype>& operator=(const Exp<Etype, Dtype>& src) {
         const Etype &src_r = src.self();
         for(index_t i = 0; i < shape_; i++) 
-            storage_[i] = src_r.eval(i);
+            eval(&i) = src_r.eval(&i);
         return *this;
     }
     // friend
