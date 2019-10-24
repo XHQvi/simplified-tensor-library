@@ -27,6 +27,7 @@ struct Tensor: public Exp<Tensor<Dim, Dtype>, Dtype> {
 		for(index_t i = 1; i <= shape_.dim(); i++)
         	stride_[i - 1] = shape_.subsize(i);
 	}
+    Tensor(const Dtype* data, const Shape<Dim>& shape): Tensor(Storage<Dtype>(data, shape.dsize()), shape){}
     explicit Tensor(const Shape<Dim>& shape): Tensor(Storage<Dtype>(shape.dsize()), shape) {}
     template<index_t Dim1> Tensor(const Tensor<Dim1, Dtype>& other, const Shape<Dim>& shape): Tensor(other.storage_, shape) {}
     Tensor(const Tensor& other) = default;

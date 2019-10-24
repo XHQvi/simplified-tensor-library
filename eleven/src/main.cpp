@@ -32,11 +32,26 @@ void print10(index_t t) {
 
 int main()
 {
-	auto ten1 = rand(Shape<2>{2, 3});
-	print10(ten1);
+	double data1[8], data2[8];
+	for(int i = 0; i < 8; i++) {
+		data1[i] = i * 0.5;
+		data2[i] = i * 0.7;
+	}
 
-	ten1 = op::sigmoid(ten1);
+	Tensor<3, double> ten1(data1, {2, 2, 2});
+	Tensor<3, double> ten2(data2, {2, 2, 2});
+	Tensor<3, double> ten3({2, 2, 2});
 	print10(ten1);
+	print10(ten2);
+
+	ten3 = ten1 + ten2;
+	print10(ten3);
+	ten3 = ten1 + ten2 - ten3;
+	print10(ten3);
+	ten3 = op::sigmoid(ten1) + ten2;
+	print10(ten3);
+	ten3 = ten2 + op::sigmoid(ten1);
+	print10(ten3);
 
 	return 0;
 }

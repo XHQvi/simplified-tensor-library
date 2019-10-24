@@ -4,6 +4,8 @@
 #include <cmath>
 #include <initializer_list>
 #include "../base/type.h"
+#include "unary_exp.h"
+#include "binary_exp.h"
 
 namespace el {
 
@@ -21,6 +23,7 @@ struct UnaryMapExp: public Exp<UnaryMapExp<OP, Otype, Dtype>, Dtype> {
 	// Dtype eval(initializer_list<index_t> ids) {return OP::map(operand_.eval(ids));}
 };
 
+// ROtype/LOtype: right/left operand type;
 template<typename OP, typename ROtype, typename LOtype, typename Dtype>
 struct BinaryMapExp: public Exp<BinaryMapExp<OP, ROtype, LOtype, Dtype>, Dtype> {
 	const ROtype& roperand_;
@@ -29,30 +32,6 @@ struct BinaryMapExp: public Exp<BinaryMapExp<OP, ROtype, LOtype, Dtype>, Dtype> 
 	Dtype eval(index_t idx) const {return OP::map(roperand_.eval(idx), loperand_.eval(idx));}
 	// Dtype eval(initializer_list<index_t> ids) {return OP::map(roperand_.eval(ids), loperand_.eval(ids));}
 };
-
-namespace op {
-// unary operator
-template<typename Dtype>
-struct AbsOP {
-	static Dtype map(Dtype value) {return value > 0 ? value: (-value);}
-};
-template<typename Otype, typename Dtype>
-inline UnaryMapExp<AbsOP<Dtype>, Otype, Dtype> abs(const Exp<Otype, Dtype>& operand) {
-	return UnaryMapExp<AbsOP<Dtype>, Otype, Dtype>(operand.self());
-}
-	
-template<typename Dtype>
-struct SigmoidOP {
-	static Dtype map(Dtype value) {return 1 / (1+std::exp(-value));}
-};
-template<typename Otype, typename Dtype>
-inline UnaryMapExp<SigmoidOP<Dtype>, Otype, Dtype> sigmoid(const Exp<Otype, Dtype>& operand) {
-	return UnaryMapExp<SigmoidOP<Dtype>, Otype, Dtype>(operand.self());
-}
-
-
-
-} // namespace op
 } // namespace el
 
 

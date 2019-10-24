@@ -15,6 +15,9 @@ struct Storage {
     explicit Storage(index_t dsize):bptr_(new Dtype[dsize]), dptr_(bptr_.get()){}
     Storage(const Storage& other, index_t offset): bptr_(other.bptr_), dptr_(other.dptr_ + offset){}
     explicit Storage(const Storage& other) = default;
+    Storage(const Dtype* data, index_t dsize): Storage(dsize) {
+        memcpy(dptr_, data, dsize*sizeof(Dtype));
+    }
     // method
     const Dtype& operator[](index_t i) const {return dptr_[i];}
     Dtype& operator[](index_t i) {return dptr_[i];}
