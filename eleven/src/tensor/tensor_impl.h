@@ -43,7 +43,8 @@ struct Tensor: public Exp<Dtype> {
     Tensor<Dim-1, Dtype> slice(index_t idx, index_t dim=0) const;
     Tensor<Dim, Dtype> slice(index_t start_idx, index_t end_idx, index_t dim) const;
     Tensor<Dim, Dtype> transpose(index_t dim1, index_t dim2) const;
-    bool contiguous(void) const;
+    bool is_contiguous(void) const;
+    template<index_t Dim1> Tensor<Dim1, Dtype> view(const Shape<Dim1>& shape) const;
     // method for implementing template expression
     Dtype eval(index_t* ids) const;
     Dtype& eval(index_t* ids);
@@ -127,11 +128,18 @@ inline Tensor<Dim, Dtype> Tensor<Dim, Dtype>::transpose(index_t dim1, index_t di
 }
 
 template<index_t Dim, typename Dtype>
-inline bool Tensor<Dim, Dtype>::contiguous(void) const {
+inline bool Tensor<Dim, Dtype>::is_contiguous(void) const {
     for(index_t i = 1; i <= shape_.dim(); i++)
         if(stride_[i - 1] != shape_.subsize(i))
             return false;
     return true;
+}
+
+template<index_t Dim, typename Dtype> template<index_t Dim1>
+inline Tensor<Dim1, Dtype> Tensor<Dim, Dtype>::view(const Shape<Dim1>& shape) const {
+    CHECK_TENSOR_CONTIGUOUS(*this, "view");
+    CHECK_SIZE_EQUAL(shape_.dsize(), shape.dsize());
+    return Tensor<Dim1, Dtype>(*this, shape);
 }
 
 template<index_t Dim, typename Dtype>

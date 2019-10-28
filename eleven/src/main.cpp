@@ -1,5 +1,6 @@
 #include <iostream>
 #include "tensor/tensor.h"
+#include "nn/conv.h"
 
 using namespace std;
 using namespace el;
@@ -29,14 +30,28 @@ int main()
 		data2[i] = i * 0.2;
 	}
 
-	Tensor<4, double> images(data1, {2, 3, 7, 7});
+	Tensor<4, double> images(data1, Shape<4>{2, 3, 7, 7});
 	print10(images);
 
+	nn::Conv2d<double> conv(3, 3, {2, 2}, {3, 2}, {2, 1});
+	for(index_t i = 0; i < conv.weight_.shape_.dsize(); i++)
+		conv.weight_.storage_[i] = 1.;
+	for(index_t i = 0; i < conv.bias_.shape_.dsize(); i++)
+		conv.bias_.storage_[i] = 1.;
 
-	auto exp = op::img2col(images,	{3, 3}, {1, 1}, {1, 1});
-	Tensor<2> cols(Shape<2>{exp.size(0), exp.size(1)});
-	cols = exp;
-	print10(cols);
+	index_t loc[3] = {0, 0, 0};
+	conv.weight_.eval(loc) = 2.;
+	loc[2] = 3;
+	conv.weight_.eval(loc) = 3.;
+	loc[2] = 1;
+	conv.weight_.eval(loc) = 4.;
+	loc[2] = 2;
+	conv.weight_.eval(loc) = 6;
+	loc[2] = 0; loc[1] = 1;
+	conv.bias_.eval(loc) = 2.;
+
+	auto result = conv.forward(images);
+	print10(result);
 
 	return 0;
 }

@@ -28,9 +28,9 @@ struct UnaryExp: public Exp<Dtype> {
 
 template<typename Dtype>
 struct BinaryExp: public Exp<Dtype> {
-	const Exp<Dtype>& roperand_;
 	const Exp<Dtype>& loperand_;
-	BinaryExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): roperand_(roperand), loperand_(loperand){}
+	const Exp<Dtype>& roperand_;
+	BinaryExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): roperand_(roperand), loperand_(loperand){}
 	virtual index_t dim(void) const {return this->roperand_.dim();}
 	virtual index_t size(index_t idx) const {return std::max(this->roperand_.size(idx), this->loperand_.size(idx));}
 };

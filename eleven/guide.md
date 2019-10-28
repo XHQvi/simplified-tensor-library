@@ -22,7 +22,7 @@ I think `shared_ptr` can make me free of annoying `delete`, but I'm not sure thi
 
 #### 1.3 Stride
 
-`int stride_[Dim]` hold the stride on each dimension, which is the most interesting thing about a tensor. For a D dimension tensor, storage address of the idx element can be calculated as fellow:
+`int stride_[Dim]` hold the stride on each dimension, which is the most interesting thing about a tensor. For a D dimension tensor, storage address of the idx element can be calculated as follows:
 $$
 Addr_k = dptr + \sum^{k-1}_{i = 0}stride[i] * idx[i]
 $$
@@ -39,7 +39,7 @@ where $dptr$ is the tensor' storage address. With the concept of stride, many op
 - `b = a[:, i, :]`
 
     ```c++
-    b.dptr = a.ｄptr + i * a.stride[1];
+    b.dptr = a.dptr + i * a.stride[1];
     b.shape = new int[2]; b.shape[0] = a.shape[0]; b.shape[1] = a.shape[2];
     b.stride = new int[2]; b.stride[0] = a.stride[0]; b.stride[1] = a.stride[2];
     ```

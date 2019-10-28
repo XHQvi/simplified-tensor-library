@@ -12,75 +12,81 @@ namespace op {
 
 template<typename Dtype>
 struct AddExp: public BinaryExp<Dtype> {
-	AddExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): BinaryExp<Dtype>(roperand, loperand){}
-	Dtype eval(index_t* ids) const {return this->roperand_.eval(ids) + this->loperand_.eval(ids);}
+	AddExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
+	Dtype eval(index_t* ids) const {return this->loperand_.eval(ids) + this->roperand_.eval(ids);}
 };
 template<typename Dtype>
-inline AddExp<Dtype> operator+(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
-	CHECK_OPERATOR_BROADCAST(roperand, loperand);
-	return AddExp<Dtype>(roperand, loperand);
+inline AddExp<Dtype> operator+(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
+	CHECK_OPERATOR_BROADCAST(loperand, roperand);
+	return AddExp<Dtype>(loperand, roperand);
 }
 
 template<typename Dtype>
 struct SubExp: public BinaryExp<Dtype> {
-	SubExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): BinaryExp<Dtype>(roperand, loperand){}
-	Dtype eval(index_t* ids) const {return this->roperand_.eval(ids) - this->loperand_.eval(ids);}
+	SubExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
+	Dtype eval(index_t* ids) const {return this->loperand_.eval(ids) - this->roperand_.eval(ids);}
 };
 template<typename Dtype>
-inline SubExp<Dtype> operator-(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
-	CHECK_OPERATOR_BROADCAST(roperand, loperand);
-	return SubExp<Dtype>(roperand, loperand);
+inline SubExp<Dtype> operator-(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
+	CHECK_OPERATOR_BROADCAST(loperand, roperand);
+	return SubExp<Dtype>(loperand, roperand);
 }
 
 template<typename Dtype>
 struct MMExp: public BinaryExp<Dtype> {
-	MMExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): BinaryExp<Dtype>(roperand, loperand){}
+	MMExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
 	index_t dim(void) const {return 2;}
-	index_t size(index_t idx) const {return idx == 0 ? this->roperand_.size(0) : this->loperand_.size(1);}
+	index_t size(index_t idx) const {return idx == 0 ? this->loperand_.size(0) : this->roperand_.size(1);}
 	Dtype eval(index_t* ids) const {
 		Dtype value = 0;
-		index_t r_loc[2] = {ids[0], 0};
-		index_t l_loc[2] = {0, ids[1]};
-		for(index_t i = 0; i < this->roperand_.size(1); i++) {
-			r_loc[1] = i;
-			l_loc[0] = i;
-			value += this->roperand_.eval(r_loc) * this->loperand_.eval(l_loc);
+		index_t l_loc[2] = {ids[0], 0};
+		index_t r_loc[2] = {0, ids[1]};
+		for(index_t i = 0; i < this->loperand_.size(1); i++) {
+			l_loc[1] = i;
+			r_loc[0] = i;
+			value += this->loperand_.eval(l_loc) * this->roperand_.eval(r_loc);
 		}
 		return value;
 	}
 };
 template<typename Dtype>
-inline MMExp<Dtype> mm(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
-	CHECK_DIM_MATCH(roperand.dim(), 2);
+inline MMExp<Dtype> mm(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
 	CHECK_DIM_MATCH(loperand.dim(), 2);
-	CHECK_SIZE_EQUAL(roperand.size(1), loperand.size(0));
-	return MMExp<Dtype>(roperand, loperand);
+	CHECK_DIM_MATCH(roperand.dim(), 2);
+	CHECK_SIZE_EQUAL(loperand.size(1), roperand.size(0));
+	return MMExp<Dtype>(loperand, roperand);
 }
 
 template<typename Dtype>
 struct BMMExp: public BinaryExp<Dtype> {
-	BMMExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): BinaryExp<Dtype>(roperand, loperand){}
+	BMMExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
 	index_t dim(void) const {return 3;}
-	index_t size(index_t idx) const {return idx < 2 ? this->roperand_.size(idx): this->loperand_.size(idx);}
+	index_t size(index_t idx) const {
+		switch(idx) {
+			case 0: return std::max(this->roperand_.size(0), this->loperand_.size(0));
+			case 1: return this->loperand_.size(1);
+			default: return this->roperand_.size(2);
+		}
+	}
 	Dtype eval(index_t* ids) const {
 		Dtype value = 0;
-		index_t r_loc[3] = {ids[0], ids[1], 0};
-		index_t l_loc[3] = {ids[0], 0, ids[2]};
-		for(index_t i = 0; i < this->roperand_.size(2); i++) {
-			r_loc[2] = i;
-			l_loc[1] = i;
-			value += this->roperand_.eval(r_loc) * this->loperand_.eval(l_loc);
+		index_t l_loc[3] = {ids[0], ids[1], 0};
+		index_t r_loc[3] = {ids[0], 0, ids[2]};
+		for(index_t i = 0; i < this->loperand_.size(2); i++) {
+			l_loc[2] = i;
+			r_loc[1] = i;
+			value += this->loperand_.eval(l_loc) * this->roperand_.eval(r_loc);
 		}
 		return value;
 	}
 };
 template<typename Dtype>
-inline BMMExp<Dtype> bmm(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
+inline BMMExp<Dtype> bmm(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
 	CHECK_DIM_MATCH(roperand.dim(), 3);
 	CHECK_DIM_MATCH(loperand.dim(), 3);
-	CHECK_SIZE_EQUAL(roperand.size(0), loperand.size(0));
-	CHECK_SIZE_EQUAL(roperand.size(2), loperand.size(1));
-	return BMMExp<Dtype>(roperand, loperand);
+	CHECK_SIZE_EQUAL(loperand.size(2), roperand.size(1));
+	// no check loperand.size(0) == roperand(0), which means allow broadcasting on batch dimension.
+	return BMMExp<Dtype>(loperand, roperand);
 }
 
 } //namespace op

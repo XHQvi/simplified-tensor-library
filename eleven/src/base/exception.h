@@ -9,11 +9,13 @@ namespace el {
 namespace exc {
 
 enum ExcType : int{
-	IndexOutOfRange_t = 0, DimNotMatch_t, SizeNotEqual_t, DimNotExist_t, OperatorNotBroadcast_t
+	IndexOutOfRange_t = 0, DimNotMatch_t, SizeNotEqual_t, DimNotExist_t, OperatorNotBroadcast_t,
+	ConvFeatureTooSmall_t, TensorNotContiguous_t,
 };
 
 const static char* exc_type[] = {
-	"IndexOutOfRange", "DimNotMatch", "SizeNotEqual", "DimNotExist", "OperatorCanNotBroadcast"
+	"IndexOutOfRange", "DimNotMatch", "SizeNotEqual", "DimNotExist", "OperatorCanNotBroadcast",
+	"ConvFeatureSmallerThanKernel", "TensorNotContiguous",
 };
 
 class IndexOutOfRange: public std::exception {
@@ -51,6 +53,22 @@ public:
 	OperatorNotBroadcast(index_t size1, index_t size2, index_t dim) {
 		std::printf("%s: got size1(%d), size2(%d), at dim(%d)\n", exc_type[type], size1, size2, dim);}
 };
+
+class ConvFeatureTooSmall: public std::exception {
+public:
+	const static int type = ExcType::ConvFeatureTooSmall_t;
+	ConvFeatureTooSmall(const std::pair<index_t, index_t>& fsize, const std::pair<index_t, index_t>& ksize) {
+		std::printf("%s: feature size(%d, %d) is smaller than kernel size(%d, %d)", 
+			        exc_type[type], fsize.first, fsize.second, ksize.first, ksize.second);}
+};
+
+class TensorNotContiguous: public std::exception {
+public:
+	const static int type = ExcType::TensorNotContiguous_t;
+	TensorNotContiguous(const char* operation) {
+		std::printf("%s: %s need contiguous tensor", exc_type[type], operation);}
+};
+
 } // namespace exc
 
 #define CHECK_INDEX_IN_RANGE(idx, low, high, dim) do {	\
@@ -73,7 +91,16 @@ public:
 	CHECK_DIM_MATCH((roperand).dim(), (loperand).dim());	\
 	for(index_t i = 0; i < (roperand).dim(); i++) 	\
 		if((roperand).size(i) != (loperand).size(i) && (roperand).size(i) != 1 && (loperand).size(i) != 1)	\
-			throw OperatorNotBroadcast((roperand).size(i), (loperand).size(i), i);	\
+			throw exc::OperatorNotBroadcast((roperand).size(i), (loperand).size(i), i);	\
+} while(0)
+
+#define CHECK_CONV_FSIZE_KSIZE(fsize, ksize) do {	\
+	if((fsize).first < (ksize).first || (fsize.second) < (ksize.second))	\
+		throw exc::ConvFeatureTooSmall(fsize, ksize);	\
+} while(0)
+
+#define CHECK_TENSOR_CONTIGUOUS(tensor, operation) do {	\
+	if(!(tensor).is_contiguous()) throw exc::TensorNotContiguous(operation);	\
 } while(0)
 
 } // namespace el
