@@ -49,7 +49,7 @@ struct Tensor: public Exp<Dtype> {
     Dtype& eval(index_t* ids);
     Tensor<Dim, Dtype>& operator=(const Exp<Dtype>& src);
     // friend
-    template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dim, Dtype1>& t);
+    template<index_t Dim1, typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dim1, Dtype1>& t);
 };
 } // namespace el (general declaration)
 
@@ -195,8 +195,8 @@ std::ostream& operator<<(std::ostream& out, const Tensor<2, Dtype>& t) {
     out << ']';
 }
 
-template<typename Dtype>
-std::ostream& operator<<(std::ostream& out, const Tensor<3, Dtype>& t) {
+template<index_t Dim, typename Dtype>
+std::ostream& operator<<(std::ostream& out, const Tensor<Dim, Dtype>& t) {
     out << '[';
     for(index_t i = 0; i < t.size(0); i++) {
         out << t.slice(i);

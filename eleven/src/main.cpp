@@ -22,19 +22,21 @@ void print10(index_t t) {
 
 int main()
 {
-	double data1[15], data2[15];
-	for(int i = 0; i < 15; i++) {
+	const index_t dsize = 2*3*7*7;
+	double data1[dsize], data2[dsize];
+	for(int i = 0; i < dsize; i++) {
 		data1[i] = i * 0.1;
 		data2[i] = i * 0.2;
 	}
 
-	Tensor<2, double> ten1(data1, {3, 5});
-	Tensor<2, double> ten2(data2, {5, 3});
-	Tensor<2, double> ten3({3, 3});
-	print10(ten1);
-	print10(ten2);
-	ten3 = op::mm(ten1, ten2);
-	print10(ten3);
+	Tensor<4, double> images(data1, {2, 3, 7, 7});
+	print10(images);
+
+
+	auto exp = op::img2col(images,	{3, 3}, {1, 1}, {1, 1});
+	Tensor<2> cols(Shape<2>{exp.size(0), exp.size(1)});
+	cols = exp;
+	print10(cols);
 
 	return 0;
 }

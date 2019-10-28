@@ -57,6 +57,32 @@ inline MMExp<Dtype> mm(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
 	return MMExp<Dtype>(roperand, loperand);
 }
 
+template<typename Dtype>
+struct BMMExp: public BinaryExp<Dtype> {
+	BMMExp(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand): BinaryExp<Dtype>(roperand, loperand){}
+	index_t dim(void) const {return 3;}
+	index_t size(index_t idx) const {return idx < 2 ? this->roperand_.size(idx): this->loperand_.size(idx);}
+	Dtype eval(index_t* ids) const {
+		Dtype value = 0;
+		index_t r_loc[3] = {ids[0], ids[1], 0};
+		index_t l_loc[3] = {ids[0], 0, ids[2]};
+		for(index_t i = 0; i < this->roperand_.size(2); i++) {
+			r_loc[2] = i;
+			l_loc[1] = i;
+			value += this->roperand_.eval(r_loc) * this->loperand_.eval(l_loc);
+		}
+		return value;
+	}
+};
+template<typename Dtype>
+inline BMMExp<Dtype> bmm(const Exp<Dtype>& roperand, const Exp<Dtype>& loperand) {
+	CHECK_DIM_MATCH(roperand.dim(), 3);
+	CHECK_DIM_MATCH(loperand.dim(), 3);
+	CHECK_SIZE_EQUAL(roperand.size(0), loperand.size(0));
+	CHECK_SIZE_EQUAL(roperand.size(2), loperand.size(1));
+	return BMMExp<Dtype>(roperand, loperand);
+}
+
 } //namespace op
 
 using op::operator+;

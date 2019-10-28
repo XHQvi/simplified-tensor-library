@@ -15,6 +15,7 @@ struct Exp {
 	virtual Dtype eval(index_t* ids) const = 0;
 	virtual index_t dim(void) const = 0;
 	virtual index_t size(index_t idx) const = 0;
+	template<typename Dtype1>friend std::ostream operator<< (std::ostream& out, const Exp<Dtype1>& exp);
 };
 
 template<typename Dtype>
