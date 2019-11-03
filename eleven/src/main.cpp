@@ -5,15 +5,12 @@
 using namespace std;
 using namespace el;
 
-template<index_t Dim, typename Dtype>
-void print10(const Tensor<Dim, Dtype>& t) {
+template<typename Dtype>
+void print10(const Tensor<Dtype>& t) {
 	cout << "=====================" << endl;
-	cout << t.shape_ << endl;
-	cout << "stride: ";
-	for(int i = 0; i < t.dim(); i++)
-		cout << t.stride_[i] << " ";
-	cout << endl;
-	cout << "offset: " << t.storage_.offset() << endl;
+	cout << "shape:  " << t.size() << endl;
+	cout << "stride: " << t.stride() << endl;
+	cout << "offset: " << t.offset() << endl;
 	cout << t << endl;
 }
 
@@ -30,14 +27,13 @@ int main()
 		data2[i] = i * 0.2;
 	}
 
-	Tensor<4, double> images(data1, Shape<4>{2, 3, 7, 7});
+	Tensor<double> images(data1, Shape{2, 3, 7, 7});
 	print10(images);
 
 	nn::Conv2d<double> conv(3, 3, {2, 2}, {3, 2}, {2, 1});
-	for(index_t i = 0; i < conv.weight_.shape_.dsize(); i++)
-		conv.weight_.storage_[i] = 1.;
-	for(index_t i = 0; i < conv.bias_.shape_.dsize(); i++)
-		conv.bias_.storage_[i] = 1.;
+	auto ones_tensor = ones({1, 1, 1});
+	conv.weight_ = ones_tensor;
+	conv.bias_ = ones_tensor;
 
 	index_t loc[3] = {0, 0, 0};
 	conv.weight_.eval(loc) = 2.;

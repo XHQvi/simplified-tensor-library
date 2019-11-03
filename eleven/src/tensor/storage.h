@@ -2,7 +2,7 @@
 #define TENSOR_STORAGE_H_
 
 #include<memory>
-#include "../base/type.h"
+#include "../utils/base.h"
 
 namespace el {
 

@@ -17,7 +17,7 @@ struct AddExp: public BinaryExp<Dtype> {
 };
 template<typename Dtype>
 inline AddExp<Dtype> operator+(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
-	CHECK_OPERATOR_BROADCAST(loperand, roperand);
+	// CHECK_OPERATOR_BROADCAST(loperand, roperand);
 	return AddExp<Dtype>(loperand, roperand);
 }
 
@@ -28,7 +28,7 @@ struct SubExp: public BinaryExp<Dtype> {
 };
 template<typename Dtype>
 inline SubExp<Dtype> operator-(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
-	CHECK_OPERATOR_BROADCAST(loperand, roperand);
+	// CHECK_OPERATOR_BROADCAST(loperand, roperand);
 	return SubExp<Dtype>(loperand, roperand);
 }
 
@@ -51,9 +51,9 @@ struct MMExp: public BinaryExp<Dtype> {
 };
 template<typename Dtype>
 inline MMExp<Dtype> mm(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
-	CHECK_DIM_MATCH(loperand.dim(), 2);
-	CHECK_DIM_MATCH(roperand.dim(), 2);
-	CHECK_SIZE_EQUAL(loperand.size(1), roperand.size(0));
+	// CHECK_DIM_MATCH(loperand.dim(), 2);
+	// CHECK_DIM_MATCH(roperand.dim(), 2);
+	// CHECK_SIZE_EQUAL(loperand.size(1), roperand.size(0));
 	return MMExp<Dtype>(loperand, roperand);
 }
 
@@ -82,17 +82,14 @@ struct BMMExp: public BinaryExp<Dtype> {
 };
 template<typename Dtype>
 inline BMMExp<Dtype> bmm(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
-	CHECK_DIM_MATCH(roperand.dim(), 3);
-	CHECK_DIM_MATCH(loperand.dim(), 3);
-	CHECK_SIZE_EQUAL(loperand.size(2), roperand.size(1));
+	// CHECK_DIM_MATCH(roperand.dim(), 3);
+	// CHECK_DIM_MATCH(loperand.dim(), 3);
+	// CHECK_SIZE_EQUAL(loperand.size(2), roperand.size(1));
 	// no check loperand.size(0) == roperand(0), which means allow broadcasting on batch dimension.
 	return BMMExp<Dtype>(loperand, roperand);
 }
 
 } //namespace op
-
-using op::operator+;
-using op::operator-;
 } // namespace el
 
 #endif
