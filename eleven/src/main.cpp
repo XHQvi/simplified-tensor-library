@@ -20,33 +20,30 @@ void print10(index_t t) {
 
 int main()
 {
-	const index_t dsize = 2*3*7*7;
-	double data1[dsize], data2[dsize];
-	for(int i = 0; i < dsize; i++) {
-		data1[i] = i * 0.1;
-		data2[i] = i * 0.2;
-	}
+	const index_t dsize = 2*3*8*7;
+	double data[dsize];
+	for(int i = 0; i < dsize; i++)
+		data[i] = i * 0.1;
+	Tensor<double> images(data, {2, 3, 8, 7});
 
-	Tensor<double> images(data1, Shape{2, 3, 7, 7});
-	print10(images);
+	nn::Conv2d<double> conv(/*in_features=*/3,
+							/*out_features=*/3, 
+							/*kernel_size=*/{2, 3}, 
+							/*stride=*/{3, 2}, 
+							/*padding=*/{2, 1});
+	cout << conv.weight_.size() << endl;
+	cout << conv.bias_.size() << endl;
 
-	nn::Conv2d<double> conv(3, 3, {2, 2}, {3, 2}, {2, 1});
-	auto ones_tensor = ones({1, 1, 1});
-	conv.weight_ = ones_tensor;
-	conv.bias_ = ones_tensor;
-
-	index_t loc[3] = {0, 0, 0};
-	conv.weight_.eval(loc) = 2.;
-	loc[2] = 3;
-	conv.weight_.eval(loc) = 3.;
-	loc[2] = 1;
-	conv.weight_.eval(loc) = 4.;
-	loc[2] = 2;
-	conv.weight_.eval(loc) = 6;
-	loc[2] = 0; loc[1] = 1;
-	conv.bias_.eval(loc) = 2.;
+	double weight_data[54], bias_data[3];
+	for(int i = 0; i < 54; i++)
+		weight_data[i] = i * 0.01;
+	for(int i = 0; i < 3; i++)
+		bias_data[i] = i * 0.05;
+	conv.weight_ = Tensor<double>(weight_data, {1, 3, 18});
+	conv.bias_ = Tensor<double>(bias_data, {1, 3, 1});
 
 	auto result = conv.forward(images);
+	print10(images);
 	print10(result);
 
 	return 0;

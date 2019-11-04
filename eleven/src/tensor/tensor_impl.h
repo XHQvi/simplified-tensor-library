@@ -181,9 +181,9 @@ bool Tensor<Dtype>::is_contiguous(void) const {
 
 template<typename Dtype>
 inline Tensor<Dtype> Tensor<Dtype>::view(const Shape& shape) const {
-    CHECK_TRUE(is_contiguous(), OpCondNotMet,
+    CHECK_TRUE(is_contiguous(), TensorNotContiguous,
         "Tensor can't be viewed, which is not is_contiguous");
-    CHECK_EQUAL(shape.dsize(), shape_.dsize(), OpCondNotMet,
+    CHECK_EQUAL(shape.dsize(), shape_.dsize(), DsizeNotMatch,
         "Got shape with dsize %d doesn't match original dsize %d", shape.dsize(), shape_.dsize());
 
     return Tensor<Dtype>(*this, shape);
@@ -227,24 +227,14 @@ void Tensor<Dtype>::set_self(const Exp<Dtype>& src) {
 
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Exp<Dtype>& src) {
-    CHECK_EQUAL(src.dim(), shape_.dim(), DimNotMatch,
-        "%dD Tensor can't be assigned to %dD expression", shape_.dim(), src.dim());
-    for(index_t i = 0; i < shape_.dim(); i++)
-        CHECK_TRUE(src.size(i) == shape_[i] || src.size(i) == 1 || shape_[i] == 1, OpCondNotMet,
-            "size %d and size %d on %dth dimension can be broadcasted", src.size(i), size(i), i);
-
+    CHECK_BROADCAST(*this, src);
     set_self(src);
     return *this;
 }
 
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Tensor<Dtype>& src) {
-    CHECK_EQUAL(src.dim(), shape_.dim(), DimNotMatch,
-        "%dD Tensor can't be assigned to %dD Tensor", shape_.dim(), src.dim());
-    for(index_t i = 0; i < shape_.dim(); i++)
-        CHECK_TRUE(src.size(i) == shape_[i] || src.size(i) == 1 || shape_[i] == 1, OpCondNotMet,
-            "size %d and size %d on %dth dimension can be broadcasted", src.size(i), size(i), i);
-    
+    CHECK_BROADCAST(*this, src);
     set_self(src);
     return *this;
 }

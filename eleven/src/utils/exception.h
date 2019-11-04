@@ -22,18 +22,19 @@ private:
 };
 
 class IndexOutOfRange: public Error {
-public:
-    IndexOutOfRange(const char* file, const char* func, unsigned int line);
+    public: IndexOutOfRange(const char* file, const char* func, unsigned int line);
 };
-
 class DimNotMatch: public Error {
-public:
-	DimNotMatch(const char* file, const char* func, unsigned int line);
+    public:	DimNotMatch(const char* file, const char* func, unsigned int line);
 };
-
-class OpCondNotMet: public Error {
-public:
-	OpCondNotMet(const char* file, const char* func, unsigned int line);
+class TensorNotContiguous: public Error {
+    public:	TensorNotContiguous(const char* file, const char* func, unsigned int line);
+};
+class DsizeNotMatch: public Error {
+    public: DsizeNotMatch(const char* file, const char* func, unsigned int line);
+};
+class OperandSizeNotMatch: public Error {
+    public: OperandSizeNotMatch(const char* file, const char* func, unsigned int line);
 };
 
 }  // namespace err
@@ -45,6 +46,7 @@ public:
 } while(0)
 
 
+// base assert macro
 #define CHECK_EQUAL(x, y, err_cls, format, ...) \
     if((x) != (y)) THROW_ERROR(err_cls, format, ##__VA_ARGS__)
 
@@ -53,6 +55,18 @@ public:
 
 #define CHECK_TRUE(cond, err_cls, format, ...)  \
     if(!(cond)) THROW_ERROR(err_cls, format, ##__VA_ARGS__)
+
+
+// higher level assert macro
+#define CHECK_BROADCAST(roperand, loperand)    do {    \
+    CHECK_EQUAL((roperand).dim(), (loperand).dim(), OperandSizeNotMatch,    \
+        "The operands' dim should be same, but got %dD and %dD", (roperand).dim(), (loperand).dim());   \
+    for(index_t ii = 0; ii < (roperand).dim(); ii++)   \
+        if((roperand).size(ii) != (loperand).size(ii) && (roperand).size(ii) != 1 && (loperand).size(ii) != 1)  \
+            THROW_ERROR(OperandSizeNotMatch,    \
+                "Operands' size on %d dimension, %d and %d, can't be broadcasted.",     \
+                ii, (roperand).size(ii), (loperand).size(ii));  \
+} while(0)
 
 }  // namespace el
 
