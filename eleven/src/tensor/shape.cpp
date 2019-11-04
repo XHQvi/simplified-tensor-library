@@ -32,12 +32,6 @@ index_t Shape::subsize(index_t start_dim) const {
 	return subsize(start_dim, dims_.size());
 }
 
-// inline index_t Shape::dim(void) const {return dims_.size();}
-
-// inline index_t Shape::operator[](index_t idx) const {return dims_[idx];}
-
-// inline index_t& Shape::operator[](index_t idx) {return dims_[idx];}
-
 std::ostream& operator<<(std::ostream& out, const Shape& s) {
     out << s.dims_;
     return out;

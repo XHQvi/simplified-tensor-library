@@ -78,7 +78,11 @@ template<typename Dtype>
  inline index_t Tensor<Dtype>::offset(void) const {return storage_.offset();}
 
 template<typename Dtype>
-inline index_t Tensor<Dtype>::size(index_t idx) const {return shape_[idx];}
+inline index_t Tensor<Dtype>::size(index_t idx) const {
+    CHECK_BETWEEN(idx, 0, shape_.dim(), IndexOutOfRange,
+       "%dD tensor got %d dimension index", shape_.dim(), idx);
+    return shape_[idx];
+}
 
 template<typename Dtype>
 inline const Shape& Tensor<Dtype>::size(void) const {return shape_;}
@@ -88,22 +92,39 @@ inline const IndexArray& Tensor<Dtype>::stride(void) const {return stride_;}
 
 template<typename Dtype>
 Dtype& Tensor<Dtype>::operator[](std::initializer_list<index_t> ids) {
+    CHECK_EQUAL(dim(), ids.size(), DimNotMatch,
+        "%dD tensor got %dD indice", dim(), ids.size());
+
     index_t offset = 0, i = 0;
-    for(auto idx: ids)
+    for(auto idx: ids) {
+        CHECK_BETWEEN(idx, 0, shape_[i], IndexOutOfRange,
+            "Tensor has size %d on %d dimension, but got %d index", shape_[i], i, idx);
         offset += idx * stride_[i++];
+    }
     return storage_[offset];
 }
 
 template<typename Dtype>
 const Dtype& Tensor<Dtype>::operator[](std::initializer_list<index_t> ids) const {
+    CHECK_EQUAL(dim(), ids.size(), DimNotMatch,
+        "%dD tensor got %dD indice", dim(), ids.size());
+
     index_t offset = 0, i = 0;
-    for(auto idx: ids)
+    for(auto idx: ids) {
+        CHECK_BETWEEN(idx, 0, shape_[i], IndexOutOfRange,
+            "Tensor has size %d on %d dimension, but got %d index", shape_[i], i, idx);
         offset += idx * stride_[i++];
-    return storage_[offset];   
+    }
+    return storage_[offset]; 
 }
 
 template<typename Dtype>
 Tensor<Dtype> Tensor<Dtype>::slice(index_t idx, index_t dim) const {
+    CHECK_BETWEEN(dim, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got index on th%d dimension", shape_.dim(), idx);
+    CHECK_BETWEEN(idx, 0, shape_[dim], IndexOutOfRange,
+        "Tensor has size %d on %d dimension, but got index %d", shape_[dim], dim, idx);
+
     Storage<Dtype> storage(storage_, stride_[dim] * idx);
     Shape shape(shape_, dim);
     IndexArray stride(shape_.dim() - 1);
@@ -118,6 +139,13 @@ Tensor<Dtype> Tensor<Dtype>::slice(index_t idx, index_t dim) const {
 
 template<typename Dtype>
 inline Tensor<Dtype> Tensor<Dtype>::slice(index_t start_idx, index_t end_idx, index_t dim) const {
+    CHECK_BETWEEN(dim, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got index on th%d dimension", shape_.dim(), dim);
+    CHECK_BETWEEN(start_idx, 0, shape_[dim], IndexOutOfRange,
+        "Tensor has size %d on %d dimension, but got %d index", shape_[dim], dim, start_idx);
+    CHECK_BETWEEN(end_idx, 0, shape_[dim], IndexOutOfRange,
+        "Tensor has size %d on %d dimension, but got %d index", shape_[dim], dim, end_idx);
+
     Storage<Dtype> storage(storage_, stride_[dim] * start_idx);
     Shape shape(shape_);
     IndexArray stride(stride_);
@@ -127,6 +155,11 @@ inline Tensor<Dtype> Tensor<Dtype>::slice(index_t start_idx, index_t end_idx, in
 
 template<typename Dtype>
 inline Tensor<Dtype> Tensor<Dtype>::transpose(index_t dim1, index_t dim2) const {
+    CHECK_BETWEEN(dim1, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got %d dimension index", shape_.dim(), dim1);
+    CHECK_BETWEEN(dim2, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got %d dimension index", shape_.dim(), dim2);
+
     Tensor<Dtype> ret(*this);
     index_t temp = ret.stride_[dim1];
     ret.stride_[dim1] = ret.stride_[dim2];
@@ -148,13 +181,18 @@ bool Tensor<Dtype>::is_contiguous(void) const {
 
 template<typename Dtype>
 inline Tensor<Dtype> Tensor<Dtype>::view(const Shape& shape) const {
+    CHECK_TRUE(is_contiguous(), OpCondNotMet,
+        "Tensor can't be viewed, which is not is_contiguous");
+    CHECK_EQUAL(shape.dsize(), shape_.dsize(), OpCondNotMet,
+        "Got shape with dsize %d doesn't match original dsize %d", shape.dsize(), shape_.dsize());
+
     return Tensor<Dtype>(*this, shape);
 }
 
 template<typename Dtype>
 Dtype Tensor<Dtype>::eval(index_t* ids) const {
     int offset = 0;
-    for(index_t i = 0; i < dim(); i++)
+    for(index_t i = 0; i < shape_.dim(); i++)
         offset += stride_[i] * ids[i];
     return storage_[offset];
 }
@@ -162,7 +200,7 @@ Dtype Tensor<Dtype>::eval(index_t* ids) const {
 template<typename Dtype>
 Dtype& Tensor<Dtype>::eval(index_t* ids) {
     int offset = 0;
-    for(index_t i = 0; i < dim(); i++)
+    for(index_t i = 0; i < shape_.dim(); i++)
         offset += stride_[i] * ids[i];
     return storage_[offset];
 }
@@ -189,12 +227,24 @@ void Tensor<Dtype>::set_self(const Exp<Dtype>& src) {
 
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Exp<Dtype>& src) {
+    CHECK_EQUAL(src.dim(), shape_.dim(), DimNotMatch,
+        "%dD Tensor can't be assigned to %dD expression", shape_.dim(), src.dim());
+    for(index_t i = 0; i < shape_.dim(); i++)
+        CHECK_TRUE(src.size(i) == shape_[i] || src.size(i) == 1 || shape_[i] == 1, OpCondNotMet,
+            "size %d and size %d on %dth dimension can be broadcasted", src.size(i), size(i), i);
+
     set_self(src);
     return *this;
 }
 
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Tensor<Dtype>& src) {
+    CHECK_EQUAL(src.dim(), shape_.dim(), DimNotMatch,
+        "%dD Tensor can't be assigned to %dD Tensor", shape_.dim(), src.dim());
+    for(index_t i = 0; i < shape_.dim(); i++)
+        CHECK_TRUE(src.size(i) == shape_[i] || src.size(i) == 1 || shape_[i] == 1, OpCondNotMet,
+            "size %d and size %d on %dth dimension can be broadcasted", src.size(i), size(i), i);
+    
     set_self(src);
     return *this;
 }

@@ -7,10 +7,10 @@
 namespace el {
 
 template<typename Dtype>
-struct Storage {
+class Storage {
     std::shared_ptr<Dtype> bptr_;  // base pointer
     Dtype* dptr_;  // data pointer
-
+public:
     // constructor
     explicit Storage(index_t dsize):bptr_(new Dtype[dsize]), dptr_(bptr_.get()){}
     Storage(const Storage& other, index_t offset): bptr_(other.bptr_), dptr_(other.dptr_ + offset){}
