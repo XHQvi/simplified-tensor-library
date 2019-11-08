@@ -2,7 +2,7 @@
 #define NN_CONV_H_
 
 #include "../tensor/tensor.h"
-#include "../expression/expression.h"
+#include "../expression/op.h"
 
 namespace el {
 namespace nn {

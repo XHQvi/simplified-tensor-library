@@ -16,20 +16,12 @@ struct AbsExp: public UnaryExp<Dtype> {
 	explicit AbsExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
 	Dtype eval(index_t* ids) const {return std::abs(this->operand_.eval(ids));}
 };
-template<typename Dtype>
-inline AbsExp<Dtype> abs(const Exp<Dtype>& operand) {
-	return AbsExp<Dtype>(operand);
-}
 
 template<typename Dtype>
 struct SigmoidExp: public UnaryExp<Dtype> {
 	explicit SigmoidExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
 	Dtype eval(index_t* ids) const {return 1 / (1+std::exp(-this->operand_.eval(ids)));}
 };
-template<typename Dtype>
-inline SigmoidExp<Dtype> sigmoid(const Exp<Dtype>& operand) {
-	return SigmoidExp<Dtype>(operand);
-}
 
 template<typename Dtype>
 struct Img2ColExp: public UnaryExp<Dtype> {
@@ -85,15 +77,6 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 		return this->operand_.eval(loc);
 	}
 };
-template<typename Dtype>
-inline Img2ColExp<Dtype> img2col(const Exp<Dtype>& operand, 
-								 const std::pair<index_t, index_t>& kernel_size, 
-								 const std::pair<index_t, index_t>& stride, 
-								 const std::pair<index_t, index_t>& padding) {
-	// CHECK_DIM_MATCH(operand.dim(), 4);  // batch_size, c, h, w
-	return Img2ColExp<Dtype>(operand, kernel_size, stride, padding);
-}
-
 
 } // namespace op
 } // namespace el

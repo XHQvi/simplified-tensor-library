@@ -1,6 +1,7 @@
 #include <iostream>
 #include "tensor/tensor.h"
 #include "nn/conv.h"
+#include "expression/op.h"
 
 using namespace std;
 using namespace el;

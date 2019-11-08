@@ -9,9 +9,6 @@
 
 namespace el {
 
-using op::operator+;
-using op::operator-;
-
 template<typename Dtype>
 class Exp {
 public:
