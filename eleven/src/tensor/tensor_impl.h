@@ -16,7 +16,7 @@ public:
     Tensor(const Storage<Dtype>& storage, const Shape& shape);
     Tensor(const Dtype* data, const Shape& shape);
     explicit Tensor(const Shape& shape);
-    Tensor(const Tensor& other) = default;
+    Tensor(const Tensor& other);
 
     // method
     index_t dim(void) const;
@@ -75,6 +75,9 @@ Tensor<Dtype>::Tensor(const Shape& shape): Tensor<Dtype>(Storage<Dtype>(shape.ds
 
 template<typename Dtype>
 Tensor<Dtype>::Tensor(const Tensor<Dtype>& other, const Shape& shape): Tensor<Dtype>(other.storage_, shape) {}
+
+template<typename Dtype>
+Tensor<Dtype>::Tensor(const Tensor<Dtype>& other): Tensor<Dtype>(other.storage_, other.shape_, other.stride_) {}
 
 template<typename Dtype>
 inline index_t Tensor<Dtype>::dim(void) const {return shape_.dim();}

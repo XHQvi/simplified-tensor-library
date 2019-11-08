@@ -36,7 +36,9 @@ class DsizeNotMatch: public Error {
 class OperandSizeNotMatch: public Error {
     public: OperandSizeNotMatch(const char* file, const char* func, unsigned int line);
 };
-
+class NodeTypeWrong: public Error {
+    public: NodeTypeWrong(const char* file, const char* func, unsigned int line);
+};
 }  // namespace err
 
 #define ERROR_LOCATION __FILE__, __func__, __LINE__

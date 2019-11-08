@@ -29,5 +29,8 @@ DsizeNotMatch::DsizeNotMatch(const char* file, const char* func, unsigned int li
 OperandSizeNotMatch::OperandSizeNotMatch(const char* file, const char* func, unsigned int line)
 	: Error("OperandSizeNotMatch", file, func, line) {}
 
+NodeTypeWrong::NodeTypeWrong(const char* file, const char* func, unsigned int line)
+    : Error("NodeTypeWrong", file, func, line) {}
+
 }  // namespace err
 }  // namespace el

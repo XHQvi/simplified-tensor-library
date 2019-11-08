@@ -29,24 +29,14 @@ int main()
 		data2[i] = i * 0.2;
 	}
 
-	Tensor<double> images(data1, Shape{2, 3, 7, 7});
-	print10(images);
+	Tensor<double> ten1(data1, {2, 3, 7, 7});
+	Tensor<double> ten2(data2, {2, 3, 7, 7});
+	print10(ten1);
+	print10(ten2);
 
-	nn::Conv2d<double> conv(3, 3, {2, 2}, {3, 2}, {2, 1});
-	auto ones_tensor = ones({1, 1, 1});
-
-	conv.weight_ = ones_tensor;
-	conv.bias_ = ones_tensor;
-
-	index_t loc[3] = {0, 0, 0};
-	conv.weight_[{0, 0, 0}] = 2.;
-	conv.weight_[{0, 0, 3}] = 3.;
-	conv.weight_[{0, 0, 1}] = 4.;
-	conv.weight_[{0, 0, 2}] = 6;
-	conv.bias_[{0, 1, 0}] = 2.;
-
-	auto result = conv.forward(images);
-	print10(images);
-	print10(result);
+	auto node_ten1 = op::node(ten1);
+	auto node1 = node_ten1 + op::node(ten2);
+	auto node2 = op::node(ten1) + node1;
+	print10(node_ten1.get());
 	return 0;
 }
