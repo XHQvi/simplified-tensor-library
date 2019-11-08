@@ -9,10 +9,10 @@ using namespace el;
 template<typename Dtype>
 void print10(const Tensor<Dtype>& t) {
 	cout << "=====================" << endl;
-	cout << "shape:  " << t.size() << " | ";
+	cout << "shape:  " << t.size() << endl;
 	cout << "stride: " << t.stride() << endl;
-	cout << "offset: " << t.offset() << " | ";
-	cout << "is unchanged: " << (t.is_unchanged() ? "True":"False") << endl;
+	cout << "offset: " << t.offset() << endl;
+	cout << "version: " << t.version() << endl;
 	cout << t << endl;
 }
 
@@ -22,21 +22,31 @@ void print10(index_t t) {
 
 int main()
 {
-	const index_t dsize = 2*3*7*7;
-	double data1[dsize], data2[dsize];
-	for(int i = 0; i < dsize; i++) {
-		data1[i] = i * 0.1;
-		data2[i] = i * 0.2;
-	}
+	const index_t dsize = 2*3*8*7;
+	double data[dsize];
+	for(int i = 0; i < dsize; i++)
+		data[i] = i * 0.1;
+	Tensor<double> images(data, {2, 3, 8, 7}, true);
 
-	Tensor<double> ten1(data1, {2, 3, 7, 7});
-	Tensor<double> ten2(data2, {2, 3, 7, 7});
-	print10(ten1);
-	print10(ten2);
+	nn::Conv2d<double> conv(/*in_features=*/3,
+							/*out_features=*/3, 
+							/*kernel_size=*/{2, 3}, 
+							/*stride=*/{3, 2}, 
+							/*padding=*/{2, 1});
+	cout << conv.weight_.size() << endl;
+	cout << conv.bias_.size() << endl;
 
-	auto node_ten1 = op::node(ten1);
-	auto node1 = node_ten1 + op::node(ten2);
-	auto node2 = op::node(ten1) + node1;
-	print10(node_ten1.get());
+	double weight_data[54], bias_data[3];
+	for(int i = 0; i < 54; i++)
+		weight_data[i] = i * 0.01;
+	for(int i = 0; i < 3; i++)
+		bias_data[i] = i * 0.05;
+	conv.weight_ = Tensor<double>(weight_data, {1, 3, 18});
+	conv.bias_ = Tensor<double>(bias_data, {1, 3, 1});
+
+	auto result = conv.forward(images);
+	// print10(images);
+	// print10(result);
+	result.backward();
 	return 0;
 }

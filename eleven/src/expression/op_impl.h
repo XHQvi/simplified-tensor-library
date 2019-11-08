@@ -30,9 +30,6 @@ inline Node<Dtype> sigmoid(const Node<Dtype>& operand) {
 	return Node<Dtype>(new SigmoidExp<Dtype>(operand.get_exp()));
 }
 
-
-// TODO:
-// check operand's size matchs expectation.
 template<typename Dtype>
 inline Img2ColExp<Dtype> img2col(const Exp<Dtype>& operand, 
 								 const std::pair<index_t, index_t>& kernel_size, 

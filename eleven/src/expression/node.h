@@ -16,21 +16,27 @@ public:
 	explicit Node(Tensor<Dtype>* exp_ptr);
 	index_t dim(void) const;
 	index_t size(index_t idx) const;
+	bool contain_tensor(void) const;
 	const Tensor<Dtype>& get(void) const;
 	const Exp<Dtype>& get_exp(void) const;
 private:
 	const std::shared_ptr<Exp<Dtype>> exp_ptr_;
-	bool is_tensor_;
+	const index_t version_;
 };
 
 template<typename Dtype>
 Node<Dtype>::Node(Exp<Dtype>* exp_ptr)
-	: exp_ptr_(exp_ptr), is_tensor_(false) {}
+	: exp_ptr_(exp_ptr), version_(-1) {}
 
 template<typename Dtype>
 Node<Dtype>::Node(Tensor<Dtype>* exp_ptr)
-	: exp_ptr_(exp_ptr), is_tensor_(true) {}
+	: exp_ptr_(exp_ptr), version_(exp_ptr->version()) {}
 
+template<typename Dtype>
+inline bool Node<Dtype>::contain_tensor(void) const {return version_ >= 0;}
+
+// TODO: ONLY TENSOR NODE'S BACKWARD FUNCTION CAN BE CALLED.
+// ONLY WHEN NODE'S VERSION IS EQUAL TO TENSOR'S VERSION, THIS FUNCTION CAN BE CALLED.
 template<typename Dtype>
 inline void Node<Dtype>::backward(void) const {
 	exp_ptr_->backward();
@@ -48,7 +54,7 @@ inline index_t Node<Dtype>::size(index_t idx) const {
 
 template<typename Dtype>
 inline const Tensor<Dtype>& Node<Dtype>::get(void) const {
-	CHECK_TRUE(is_tensor_, NodeTypeWrong,
+	CHECK_TRUE(contain_tensor(), NodeTypeWrong,
 		"Can't get a tensor reference from a node not containing a tensor");
 	return *static_cast<Tensor<Dtype>*>(exp_ptr_.get());
 }

@@ -2,6 +2,7 @@
 #define EXPRESSION_BINARY_EXP_H_
 
 #include "expression.h"
+#include <iostream>
 
 namespace el {
 
@@ -14,6 +15,11 @@ template<typename Dtype>
 struct AddExp: public BinaryExp<Dtype> {
 	AddExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
 	Dtype eval(index_t* ids) const {return this->loperand_.eval(ids) + this->roperand_.eval(ids);}
+	void backward(void) const {
+		std::cout << "add backward" << std::endl;
+		this->loperand_.backward();
+		this->roperand_.backward();
+	}
 };
 
 template<typename Dtype>
@@ -61,6 +67,11 @@ struct BMMExp: public BinaryExp<Dtype> {
 			value += this->loperand_.eval(l_loc) * this->roperand_.eval(r_loc);
 		}
 		return value;
+	}
+	void backward(void) const {
+		std::cout << "bmm backward" << std::endl;
+		this->loperand_.backward();
+		this->roperand_.backward();
 	}
 };
 

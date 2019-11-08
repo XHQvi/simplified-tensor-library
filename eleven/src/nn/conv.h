@@ -10,6 +10,8 @@ namespace nn {
 template<typename Dtype>
 class Conv2d {
 public:
+    // TODO:
+    // weight should be maintained by nodes, and the tensor contained by it should require grad.
     Tensor<Dtype> weight_;
     Tensor<Dtype> bias_;
 
@@ -21,10 +23,7 @@ public:
           bias_({1, out_features, 1}) {}
     Conv2d(index_t in_features, index_t out_features, index_t kernel_size,
            index_t stride, index_t padding)
-        : in_features_(in_features), out_features_(out_features), kernel_size_({kernel_size, kernel_size}),
-          stride_({stride, stride}), padding_({padding, padding}),
-          weight_({1, out_features, in_features*kernel_size*kernel_size}),
-          bias_({1, out_features, 1}) {}
+        : Conv2d(in_features, out_features, {kernel_size, kernel_size}, {stride, stride}, {padding, padding}) {}
     Tensor<Dtype> forward(const Tensor<Dtype>& imgs) {
         auto col_exp = op::img2col(imgs, kernel_size_, stride_, padding_);
         auto exp = op::bmm(weight_, col_exp) + bias_;

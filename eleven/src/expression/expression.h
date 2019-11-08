@@ -9,12 +9,16 @@
 
 namespace el {
 
+template<typename Dtype> class Tensor;
+
+// TODO: declare backward as private
 template<typename Dtype>
 class Exp {
 public:
 	virtual Dtype eval(index_t* ids) const = 0;
 	virtual index_t dim(void) const = 0;
 	virtual index_t size(index_t idx) const = 0;
+	virtual void backward(void) const = 0;
 };
 
 template<typename Dtype>

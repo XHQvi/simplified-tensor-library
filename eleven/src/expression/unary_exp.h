@@ -3,11 +3,13 @@
 
 #include <cmath>
 #include "expression.h"
+#include <iostream>
 
 namespace el {
 
-template<typename Dtype> struct Exp;
-template<typename Dtype> struct UnaryExp;
+template<typename Dtype> class Exp;
+template<typename Dtype> class UnaryExp;
+template<typename Dtype> class Tensor;
 
 namespace op {
 
@@ -75,6 +77,11 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 		if(loc[2] < 0 || loc[2] >= this->operand_.size(2) || loc[3] < 0 || loc[3] >= this->operand_.size(3))
 			return 0;
 		return this->operand_.eval(loc);
+	}
+
+	void backward(void) const {
+		std::cout << "img2col backward" << std::endl;
+		this->operand_.backward();
 	}
 };
 
