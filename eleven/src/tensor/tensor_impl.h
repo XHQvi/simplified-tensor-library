@@ -10,17 +10,12 @@
 namespace el {
 // general declaration
 template<typename Dtype>
-struct Tensor: public Exp<Dtype> {
-    Storage<Dtype> storage_;
-    Shape shape_;
-    IndexArray stride_;
-
+class Tensor: public Exp<Dtype> {
+public:
     // constructor
-    Tensor(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride);
     Tensor(const Storage<Dtype>& storage, const Shape& shape);
     Tensor(const Dtype* data, const Shape& shape);
     explicit Tensor(const Shape& shape);
-    Tensor(const Tensor& other, const Shape& shape);
     Tensor(const Tensor& other) = default;
 
     // method
@@ -29,6 +24,7 @@ struct Tensor: public Exp<Dtype> {
     index_t offset(void) const;
     const Shape& size(void) const;
     const IndexArray& stride(void) const;
+    bool is_unchanged(void) const;
     Dtype& operator[](std::initializer_list<index_t> ids);
     const Dtype& operator[](std::initializer_list<index_t> ids) const;
     Tensor slice(index_t idx, index_t dim=0) const;
@@ -36,14 +32,23 @@ struct Tensor: public Exp<Dtype> {
     Tensor transpose(index_t dim1, index_t dim2) const;
     bool is_contiguous(void) const;
     Tensor view(const Shape& shape) const;
-    // method for implementing template expression
-    Dtype eval(index_t* ids) const;
-    Dtype& eval(index_t* ids);
-    void set_self(const Exp<Dtype>& src);
     Tensor& operator=(const Exp<Dtype>& src);
     Tensor& operator=(const Tensor& src);
     // friend
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dtype1>& t);
+    friend Exp<Dtype>;
+private:
+    Storage<Dtype> storage_;
+    Shape shape_;
+    IndexArray stride_;
+    const index_t version_;
+
+    Tensor(const Tensor& other, const Shape& shape);
+    Tensor(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride);
+    // method for implementing template expression
+    void set_self(const Exp<Dtype>& src);
+    Dtype eval(index_t* ids) const;
+    Dtype& eval(index_t* ids);
 };
 } // namespace el (general declaration)
 
@@ -51,11 +56,11 @@ namespace el {
 
 template<typename Dtype>
 Tensor<Dtype>::Tensor(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride)
-    : storage_(storage), shape_(shape), stride_(stride) {}
+    : storage_(storage), shape_(shape), stride_(stride), version_(storage_.version()) {}
 
 template<typename Dtype>
 Tensor<Dtype>::Tensor(const Storage<Dtype>& storage, const Shape& shape)
-    : storage_(storage), shape_(shape), stride_(shape_.dim()) {
+    : storage_(storage), shape_(shape), stride_(shape_.dim()), version_(storage_.version()) {
     for(index_t i = 0; i < shape_.dim(); i++) {
         if(shape_[i] == 1) stride_[i] = 0; // for broadcasting
         else stride_[i] = shape_.subsize(i + 1);
@@ -91,6 +96,11 @@ template<typename Dtype>
 inline const IndexArray& Tensor<Dtype>::stride(void) const {return stride_;}
 
 template<typename Dtype>
+inline bool Tensor<Dtype>::is_unchanged(void) const {return version_ == storage_.version();}
+
+// This function will change the content of tensor, so version of the storage will be add 1,
+// which causes failure of gradient backward.
+template<typename Dtype>
 Dtype& Tensor<Dtype>::operator[](std::initializer_list<index_t> ids) {
     CHECK_EQUAL(dim(), ids.size(), DimNotMatch,
         "%dD tensor got %dD indice", dim(), ids.size());
@@ -101,6 +111,7 @@ Dtype& Tensor<Dtype>::operator[](std::initializer_list<index_t> ids) {
             "Tensor has size %d on %d dimension, but got %d index", shape_[i], i, idx);
         offset += idx * stride_[i++];
     }
+    storage_.version_forward();
     return storage_[offset];
 }
 
@@ -197,6 +208,8 @@ Dtype Tensor<Dtype>::eval(index_t* ids) const {
     return storage_[offset];
 }
 
+// This function will change the content of tensor, but won't change version of storage.
+// It may cause wrong gradient. So this function is dangerous
 template<typename Dtype>
 Dtype& Tensor<Dtype>::eval(index_t* ids) {
     int offset = 0;
@@ -205,6 +218,13 @@ Dtype& Tensor<Dtype>::eval(index_t* ids) {
     return storage_[offset];
 }
 
+// This function was written in a recursive form originally, then was converted to a while loop form.
+// The while loop will iterate all possible indice for this tensor, so we can calculate and set each
+// value. For element-wise operation, it's fine to use a loop like 
+//  for(index i = 0; i < storage_.size(); i++)
+//      storage_[i] = calculate_value(i);
+// But if we want to implement other operations, like Matrix Multiply and 2D Convolution, in the single
+// function. So we need logical indice instead of a physical index.
 template<typename Dtype>
 void Tensor<Dtype>::set_self(const Exp<Dtype>& src) {
     index_t num_dim = shape_.dim();
@@ -223,8 +243,11 @@ void Tensor<Dtype>::set_self(const Exp<Dtype>& src) {
         } else idx--;
     }
     delete [] loc;
+    storage_.version_forward();
 }
 
+// This function will change the content of tensor, so version of the storage will be add 1,
+// which causes failure of gradient backward.
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Exp<Dtype>& src) {
     CHECK_BROADCAST(*this, src);
@@ -232,6 +255,8 @@ inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Exp<Dtype>& src) {
     return *this;
 }
 
+// This function will change the content of tensor, so version of the storage will be add 1,
+// which causes failure of gradient backward.
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Tensor<Dtype>& src) {
     CHECK_BROADCAST(*this, src);
