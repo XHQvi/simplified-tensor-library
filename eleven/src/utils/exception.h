@@ -39,6 +39,9 @@ class OperandSizeNotMatch: public Error {
 class NodeTypeWrong: public Error {
     public: NodeTypeWrong(const char* file, const char* func, unsigned int line);
 };
+class BackwardFailure: public Error {
+    public: BackwardFailure(const char* file, const char* func, unsigned int line);
+};
 }  // namespace err
 
 #define ERROR_LOCATION __FILE__, __func__, __LINE__

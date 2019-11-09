@@ -22,6 +22,7 @@ void print10(index_t t) {
 
 int main()
 {
+{
 	const index_t dsize = 2*3*8*7;
 	double data[dsize];
 	for(int i = 0; i < dsize; i++)
@@ -45,10 +46,9 @@ int main()
 	conv.bias_ = Tensor<>(bias_data, {1, 3, 1});
 
 	auto result = conv.forward(op::node(images));
-	cout << "after forward" << endl;
-	print10(result.get_tensor());
-	// result.backward();
-
+	// print10(result.get_tensor());
+	result.backward();
+}
 
 	return 0;
 }

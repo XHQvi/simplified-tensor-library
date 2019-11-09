@@ -32,5 +32,8 @@ OperandSizeNotMatch::OperandSizeNotMatch(const char* file, const char* func, uns
 NodeTypeWrong::NodeTypeWrong(const char* file, const char* func, unsigned int line)
     : Error("NodeTypeWrong", file, func, line) {}
 
+BackwardFailure::BackwardFailure(const char* file, const char* func, unsigned int line)
+    : Error("BackwardFailure", file, func, line) {}
+
 }  // namespace err
 }  // namespace el

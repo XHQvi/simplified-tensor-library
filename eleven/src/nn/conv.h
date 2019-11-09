@@ -33,21 +33,10 @@ public:
     Node<float_t> forward(const Node<float_t>& imgs) {
         auto col_node = op::img2col(imgs, kernel_size_, stride_, padding_);
         auto col_exp = col_node.get<op::Img2ColExp>();
-        std::cout << "asd " << col_node.size(0) << std::endl;
-        std::cout << "asd " << col_exp.size(0) << std::endl;
-        std::cout << " 1 " << std::endl; 
-        std::cout << "asd " << op::node(weight_).size(0) << std::endl;
-        auto bmm_node = op::bmm(op::node(weight_), col_node);
-        std::cout << "asd " << std::endl;
-        std::cout << "asd " << bmm_node.size(2) << std::endl;
-        std::cout << "asd " << bmm_node.get<op::BMMExp>().size(0) << std::endl;
-        auto conv_node = bmm_node + op::node(bias_);
+        auto conv_node = op::bmm(op::node(weight_), col_node) + op::node(bias_);
         auto conv_exp = conv_node.get<op::AddExp>();
-        std::cout << " 2 " << std::endl;
-        Tensor<float_t> result({conv_exp.size(0), conv_exp.size(1), conv_exp.size(2)});
-        std::cout << " 3 " << std::endl;
+        Tensor<float_t> result({conv_exp.size(0), conv_exp.size(1), conv_exp.size(2)}, true);
         result = conv_exp;
-        std::cout << " 4 " << std::endl;
         return Node<float_t>(new Tensor<float_t>(
             result.view({imgs.size(0), out_features_, col_exp.out_size(0), col_exp.out_size(1)})));
     }

@@ -22,7 +22,7 @@ public:
 	bool contain_tensor(void) const;
 	const Tensor<Dtype>& get_tensor(void) const;
 	const Exp<Dtype>& get_exp(void) const;
-	const Exp<Dtype>* get_exp_ptr(void) const;
+	const std::shared_ptr<Exp<Dtype>>& get_exp_ptr(void) const;
 	template<template<typename Dtype1> class ExpType> const ExpType<Dtype>& get(void) const;
 private:
 	const std::shared_ptr<Exp<Dtype>> exp_ptr_;
@@ -72,8 +72,8 @@ inline const Exp<Dtype>& Node<Dtype>::get_exp(void) const {
 }
 
 template<typename Dtype>
-inline const Exp<Dtype>* Node<Dtype>::get_exp_ptr(void) const {
-	return exp_ptr_.get();
+inline const std::shared_ptr<Exp<Dtype>>& Node<Dtype>::get_exp_ptr(void) const {
+	return exp_ptr_;
 }
 
 }  // namespace el
