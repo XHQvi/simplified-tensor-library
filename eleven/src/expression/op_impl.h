@@ -41,8 +41,8 @@ inline Img2ColExp<Dtype> img2col(const Exp<Dtype>& operand,
 	CHECK_TRUE(ret.out_size(0) > 0, OperandSizeNotMatch,
 		"Can't convolve on image(%d, %d) because of too big kernel size(%d, %d) or stride(%d, %d)", 
 		operand.size(2), operand.size(3),
-		ret.kernel_size_.first, ret.kernel_size_.second,
-		ret.stride_.first, ret.stride_.second);
+		kernel_size.first, kernel_size.second,
+		stride.first, stride.second);
 	return ret;
 }
 template<typename Dtype>
@@ -52,13 +52,13 @@ inline Node<Dtype> img2col(const Node<Dtype>& operand,
 						   const std::pair<index_t, index_t>& padding) {
 	CHECK_EQUAL(operand.dim(), 4, DimNotMatch,
 		"Img2ColExp expect 4D tensor:(b, c, h, w), but got %dD tensor", operand.dim());
-	Img2ColExp<Dtype> ret (operand, kernel_size, stride, padding);
-	CHECK_TRUE(ret.out_size(0) > 0, OperandSizeNotMatch,
+	Img2ColExp<Dtype>* ret = new Img2ColExp<Dtype>(operand.get_exp(), kernel_size, stride, padding);
+	CHECK_TRUE(ret->out_size(0) > 0, OperandSizeNotMatch,
 		"Can't convolve on image(%d, %d) because of too big kernel size(%d, %d) or stride(%d, %d)", 
 		operand.size(2), operand.size(3),
-		ret.kernel_size_.first, ret.kernel_size_.second,
-		ret.stride_.first, ret.stride_.second);
-	return ret;
+		kernel_size.first, kernel_size.second,
+		stride.first, stride.second);
+	return Node<Dtype>(ret);
 }
 
 template<typename Dtype>

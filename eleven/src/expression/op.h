@@ -1,6 +1,7 @@
 #ifndef EXPRESSION_OP_H_
 #define EXPRESSION_OP_H_
 
+#include "node.h"
 #include "op_impl.h"
 #include "../tensor/tensor_impl.h"
 

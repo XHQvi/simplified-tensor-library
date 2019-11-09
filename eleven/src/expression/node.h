@@ -11,14 +11,19 @@ template<typename Dtype> class Tensor;
 template<typename Dtype>
 class Node {
 public:
-	void backward(void) const;
+	// constructors
 	explicit Node(Exp<Dtype>* exp_ptr);
 	explicit Node(Tensor<Dtype>* exp_ptr);
+	// shortcut to exp
+	void backward(void) const;
 	index_t dim(void) const;
 	index_t size(index_t idx) const;
+	// node's method
 	bool contain_tensor(void) const;
-	const Tensor<Dtype>& get(void) const;
+	const Tensor<Dtype>& get_tensor(void) const;
 	const Exp<Dtype>& get_exp(void) const;
+	const Exp<Dtype>* get_exp_ptr(void) const;
+	template<template<typename Dtype1> class ExpType> const ExpType<Dtype>& get(void) const;
 private:
 	const std::shared_ptr<Exp<Dtype>> exp_ptr_;
 	const index_t version_;
@@ -43,26 +48,34 @@ inline void Node<Dtype>::backward(void) const {
 }
 
 template<typename Dtype>
-inline index_t Node<Dtype>::dim(void) const {
-	return exp_ptr_->dim();
+inline index_t Node<Dtype>::dim(void) const {return exp_ptr_->dim();}
+
+template<typename Dtype>
+inline index_t Node<Dtype>::size(index_t idx) const {return exp_ptr_->size(idx);}
+
+template<typename Dtype>
+	template<template<typename Dtype1> class ExpType>
+inline const ExpType<Dtype>& Node<Dtype>::get(void) const {
+	return *static_cast<ExpType<Dtype>*>(exp_ptr_.get());
 }
 
 template<typename Dtype>
-inline index_t Node<Dtype>::size(index_t idx) const {
-	return exp_ptr_->size(idx);
-}
-
-template<typename Dtype>
-inline const Tensor<Dtype>& Node<Dtype>::get(void) const {
+inline const Tensor<Dtype>& Node<Dtype>::get_tensor(void) const {
 	CHECK_TRUE(contain_tensor(), NodeTypeWrong,
 		"Can't get a tensor reference from a node not containing a tensor");
-	return *static_cast<Tensor<Dtype>*>(exp_ptr_.get());
+	return get<Tensor>();
 }
 
 template<typename Dtype>
 inline const Exp<Dtype>& Node<Dtype>::get_exp(void) const {
 	return *exp_ptr_.get();
 }
+
+template<typename Dtype>
+inline const Exp<Dtype>* Node<Dtype>::get_exp_ptr(void) const {
+	return exp_ptr_.get();
+}
+
 }  // namespace el
 
 #endif
