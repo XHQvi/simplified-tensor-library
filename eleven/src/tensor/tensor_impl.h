@@ -6,6 +6,7 @@
 #include "storage.h"
 #include "shape.h"
 #include "../expression/expression.h"
+#include "../expression/node.h"
 #include "tensor.h"
 
 namespace el {
@@ -17,8 +18,7 @@ public:
     Tensor(const Storage<Dtype>& storage, const Shape& shape, bool requires_grad=false);
     Tensor(const Dtype* data, const Shape& shape, bool requires_grad=false);
     explicit Tensor(const Shape& shape, bool requires_grad=false);
-    Tensor(const Tensor& other);
-    ~Tensor();
+    Tensor(const Tensor& other) = default;
 
     // method
     index_t dim(void) const;
@@ -36,6 +36,7 @@ public:
     bool is_contiguous(void) const;
     Tensor& operator=(const Exp<Dtype>& src);
     Tensor& operator=(const Tensor& src);
+    Tensor& operator=(const Node<Dtype>& src);
     void backward(void) const;
     // friend
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dtype1>& t);
@@ -44,54 +45,56 @@ private:
     Storage<Dtype> storage_;
     Shape shape_;
     IndexArray stride_;
+    // When I wrote this part, I hadn't known anything about <boost/enable_shared_from_this.hpp>.
+    // So I implemented this by myself, and this is why self_ exists.
+    mutable std::weak_ptr<const Tensor<Dtype>> self_;
+
+    // auto gradient
+    struct AutoGradMeta {
+        Tensor<Dtype> grad_;
+        bool from_view_;
+        std::shared_ptr<const Exp<Dtype>> next_exp_;
+        AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, 
+                     const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view);
+        AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape,
+                     const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view);
+        AutoGradMeta(const Shape& shape);
+    };
+    std::shared_ptr<AutoGradMeta> ag_meta_;
+    bool requires_grad_;
 
     // constructor
-    Tensor(const Tensor& other, const Shape& shape);
     Tensor(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, bool requires_grad=false);
-    // method for implementing template expression
+    // methods
     void set_self(const Exp<Dtype>& src);
     Dtype eval(index_t* ids) const;
     Dtype& eval(index_t* ids);
-    
-    // auto gradient
-    struct AutoGradMeta {
-        index_t ref_count = 1;
-        Tensor<Dtype> grad_;
-        const Exp<Dtype>& next_exp_;
-        bool from_view_;
-        AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, 
-                     const Exp<Dtype>& next_exp, bool from_view);
-        AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape,
-                     const Exp<Dtype>& next_exp, bool from_view);
-        AutoGradMeta(const Shape& shape, const Exp<Dtype>& next_exp, bool from_view);
-    };
-    // It's annoying to use smate pointer here, so I maintain ref_count by myself.
-    // Increase ref_count in copy constructor, and decrease it in deconstructor.
-    // So never assign ag_meta to another.
-    AutoGradMeta* ag_meta_ = nullptr;
-    bool requires_grad_;
+    std::shared_ptr<const Tensor<Dtype>> shared_self(void) const;  // same as shared_from_this.
 };
 
-// ******************** constructors of AutoGradMeta ********************
+// ******************** constructors and methods of AutoGradMeta ********************
 template<typename Dtype>
 Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, 
-                                          const Exp<Dtype>& next_exp, bool from_view)
+                                          const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view)
     : grad_(storage, shape, stride, false), next_exp_(next_exp), from_view_(from_view) {}
 
 template<typename Dtype>
 Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape,
-                                          const Exp<Dtype>& next_exp, bool from_view)
+                                          const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view)
     : grad_(storage, shape, false), next_exp_(next_exp), from_view_(from_view) {}
 
 template<typename Dtype>
-Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Shape& shape, const Exp<Dtype>& next_exp, bool from_view)
-    : AutoGradMeta(Storage<Dtype>(0, shape.dsize()), shape, next_exp, from_view) {}
+Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Shape& shape)
+    : grad_(Storage<Dtype>(0, shape.dsize()), shape, false), next_exp_(nullptr), from_view_(false) {}
 
 
 // ******************** constructors of Tensor ********************
 template<typename Dtype>
 Tensor<Dtype>::Tensor(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, bool requires_grad)
-    : storage_(storage), shape_(shape), stride_(stride), requires_grad_(requires_grad) {}
+    : storage_(storage), shape_(shape), stride_(stride), requires_grad_(requires_grad) {
+    if(requires_grad_) 
+        ag_meta_.reset(new AutoGradMeta(shape_));
+}
 
 template<typename Dtype>
 Tensor<Dtype>::Tensor(const Storage<Dtype>& storage, const Shape& shape, bool requires_grad)
@@ -100,6 +103,8 @@ Tensor<Dtype>::Tensor(const Storage<Dtype>& storage, const Shape& shape, bool re
         if(shape_[i] == 1) stride_[i] = 0; // for broadcasting
         else stride_[i] = shape_.subsize(i + 1);
     }
+    if(requires_grad_)
+        ag_meta_.reset(new AutoGradMeta(shape_));
 }
 
 template<typename Dtype>
@@ -110,24 +115,6 @@ template<typename Dtype>
 Tensor<Dtype>::Tensor(const Shape& shape, bool requires_grad)
     : Tensor<Dtype>(Storage<Dtype>(shape.dsize()), shape, requires_grad) {}
 
-template<typename Dtype>
-Tensor<Dtype>::Tensor(const Tensor<Dtype>& other, const Shape& shape)
-    : Tensor<Dtype>(other.storage_, shape, other.requires_grad_) {}
-
-template<typename Dtype>
-Tensor<Dtype>::Tensor(const Tensor<Dtype>& other)
-    : storage_(other.storage_), shape_(other.shape_), stride_(other.stride_), 
-      ag_meta_(other.ag_meta_), requires_grad_(other.requires_grad_) {
-    if(ag_meta_) ag_meta_->ref_count ++;
-}
-
-template<typename Dtype>
-Tensor<Dtype>::~Tensor() {
-    if(ag_meta_) {
-        ag_meta_->ref_count --;
-        if(ag_meta_->ref_count == 0) delete ag_meta_;
-    }
-}
 
 // ******************** Methods of Tensor ********************
 template<typename Dtype>
@@ -211,10 +198,12 @@ Tensor<Dtype> Tensor<Dtype>::slice(index_t idx, index_t dim) const {
     for(;i < shape_.dim()-1; i++)
         stride[i] = stride_[i+1];
     
-    Tensor<Dtype> ret(storage, shape, stride, requires_grad_);
-    if(requires_grad_ && ag_meta_) {
+    // requires_grad = false, to avoid creating extra AutoGradMeta
+    Tensor<Dtype> ret(storage, shape, stride, false);
+    if(requires_grad_) {
+        ret.requires_grad_ = true;
         Storage<Dtype> grad_storage(ag_meta_->grad_.storage_, stride_[dim] * idx);
-        ret.ag_meta_ = new AutoGradMeta(grad_storage, shape, stride, *this, true);
+        ret.ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, shared_self(), true));
     }
     return ret;
 }
@@ -233,10 +222,11 @@ inline Tensor<Dtype> Tensor<Dtype>::slice(index_t start_idx, index_t end_idx, in
     IndexArray stride(stride_);
     shape[dim] = end_idx - start_idx;
 
-    Tensor<Dtype> ret(storage, shape, stride, requires_grad_);
-    if(requires_grad_ && ag_meta_) {
+    Tensor<Dtype> ret(storage, shape, stride, false);
+    if(requires_grad_) {
+        ret.requires_grad_ = true;
         Storage<Dtype> grad_storage(ag_meta_->grad_.storage_, stride_[dim] * start_idx);
-        ret.ag_meta_ = new AutoGradMeta(grad_storage, shape, stride, *this, true);
+        ret.ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, shared_self(), true));
     }
     return ret;
 }
@@ -256,9 +246,11 @@ inline Tensor<Dtype> Tensor<Dtype>::transpose(index_t dim1, index_t dim2) const 
     stride[dim1] = stride_[dim2];
     stride[dim2] = stride_[dim1];
     
-    Tensor<Dtype> ret(storage_, shape, stride, requires_grad_);
-    if(requires_grad_ && ag_meta_)
-        ret.ag_meta_ = new AutoGradMeta(ag_meta_->grad_.storage_, shape, stride, *this, true);
+    Tensor<Dtype> ret(storage_, shape, stride, false);
+    if(requires_grad_) {
+        ret.requires_grad_ = true;
+        ret.ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, stride, shared_self(), true));
+    }
     return ret;
 }
 
@@ -269,9 +261,13 @@ inline Tensor<Dtype> Tensor<Dtype>::view(const Shape& shape) const {
     CHECK_EQUAL(shape.dsize(), shape_.dsize(), DsizeNotMatch,
         "Got shape with dsize %d doesn't match original dsize %d", shape.dsize(), shape_.dsize());
 
-    Tensor<Dtype> ret(*this, shape);
-    if(requires_grad_ && ag_meta_)
-        ret.ag_meta_ = new AutoGradMeta(ag_meta_->grad_.storage_, shape, *this, true);
+    Tensor<Dtype> ret(storage_, shape, false);
+    if(requires_grad_) {
+        ret.requires_grad_ = true;
+        auto self = shared_self();
+        std::cout << self.use_count() << std::endl;
+        ret.ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, self, true));
+    }
     return ret;
 }
 
@@ -284,6 +280,18 @@ bool Tensor<Dtype>::is_contiguous(void) const {
 }
 
 template<typename Dtype>
+std::shared_ptr<const Tensor<Dtype>> Tensor<Dtype>::shared_self(void) const {
+    if(!ag_meta_) return nullptr;
+
+    auto temp = self_.lock();
+    if(!temp) {
+        temp.reset(this);
+        self_ = temp;
+    }
+    return temp;
+}
+
+template<typename Dtype>
 Dtype Tensor<Dtype>::eval(index_t* ids) const {
     int offset = 0;
     for(index_t i = 0; i < shape_.dim(); i++)
@@ -292,7 +300,7 @@ Dtype Tensor<Dtype>::eval(index_t* ids) const {
 }
 
 // This function will change the content of tensor, but won't change version of storage.
-// It may cause wrong gradient. So this function is dangerous.
+// It may cause wrong gradient. Using it cautiously.
 template<typename Dtype>
 Dtype& Tensor<Dtype>::eval(index_t* ids) {
     int offset = 0;
@@ -303,11 +311,11 @@ Dtype& Tensor<Dtype>::eval(index_t* ids) {
 
 // This function was written in a recursive form originally, then was converted to a while loop form.
 // The while loop will iterate all possible indice for this tensor, so we can calculate and set each
-// value. For element-wise operation, it's fine to use a loop like 
+// value in this tensor. For element-wise operation, it's fine to use a loop like 
 //  for(index i = 0; i < storage_.size(); i++)
 //      storage_[i] = calculate_value(i);
 // But if we want to implement other operations, like Matrix Multiply and 2D Convolution, in the single
-// function. So we need logical indice instead of a physical index.
+// function, we need logical indice instead of a physical index.
 template<typename Dtype>
 void Tensor<Dtype>::set_self(const Exp<Dtype>& src) {
     index_t num_dim = shape_.dim();
@@ -330,36 +338,46 @@ void Tensor<Dtype>::set_self(const Exp<Dtype>& src) {
 }
 
 // This function will change the content of tensor, so version of the storage will be add 1.
-// If the tensor has been in a computation graph, an exception would be throwed when gradient backwards.
+// If the tensor has been in a computation graph, an exception would be thrown when gradient backwards.
 //
-// If requires_grad is true, alloc a new AutoGradMeta for this tensor no matter ag_meta is nullptr or not.
-// That means this tensor would be detached from its original graph.
+// Assigning a Exp to a tensor wouldn't be added into any computation graphs, while assigning a node to a 
+// tensor would. Because we couldn't assign ag_meta->next_exp_ to a exp when we only get the exp itself. 
+// ag_meta->next_exp_ is a shared_ptr, and Exp has no method like shared_from_this.
+// And it's unnecessary to implement that, considering we can use Node when we want to calculate gradient.
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Exp<Dtype>& src) {
     CHECK_BROADCAST(*this, src);
     set_self(src);
-    if(requires_grad_) {
-        delete ag_meta_;
-        ag_meta_ = new AutoGradMeta(shape_, src, false);
-    }
     return *this;
 }
 
-// This function is basically equal to the previous one.
+// Using src.shared_self(), we can add this operation into a computation graph, but I didn't do 
+// that, considering of consistency.
 template<typename Dtype>
 inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Tensor<Dtype>& src) {
     CHECK_BROADCAST(*this, src);
     set_self(src);
-    if(requires_grad_) {
-        delete ag_meta_;
-        ag_meta_ = new AutoGradMeta(shape_, src, false);
-    }
+    return *this;
+}
+
+template<typename Dtype>
+inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Node<Dtype>& src) {
+    const Exp<Dtype>& src_exp = src.get_exp();
+    CHECK_BROADCAST(*this, src_exp);
+    set_self(src_exp);
+    if(requires_grad_)
+        ag_meta_->next_exp_ = src.get_exp_ptr();
     return *this;
 }
 
 template<typename Dtype>
 inline void Tensor<Dtype>::backward(void) const {
+    if(!requires_grad_) return;
+
     std::cout << "tensor backward" << std::endl;
+    
+    if(ag_meta_->next_exp_)
+        ag_meta_->next_exp_->backward();
 }
 
 template<typename Dtype>

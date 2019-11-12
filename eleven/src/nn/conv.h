@@ -35,10 +35,11 @@ public:
         auto col_exp = col_node.get<op::Img2ColExp>();
         auto conv_node = op::bmm(op::node(weight_), col_node) + op::node(bias_);
         auto conv_exp = conv_node.get<op::AddExp>();
-        Tensor<float_t> result({conv_exp.size(0), conv_exp.size(1), conv_exp.size(2)}, true);
-        result = conv_exp;
+        Tensor<float_t>* result = new Tensor<float_t>({conv_exp.size(0), conv_exp.size(1), conv_exp.size(2)}, true);
+        *result = conv_node;
+        // TODO: There are unnecessary construction of tensors.
         return Node<float_t>(new Tensor<float_t>(
-            result.view({imgs.size(0), out_features_, col_exp.out_size(0), col_exp.out_size(1)})));
+            result->view({imgs.size(0), out_features_, col_exp.out_size(0), col_exp.out_size(1)})));
     }
 private:
     index_t in_features_, out_features_;
