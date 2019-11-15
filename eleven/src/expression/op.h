@@ -15,14 +15,18 @@ using op::operator-;
 namespace op {
 template<typename Dtype> Node<Dtype> node(const Tensor<Dtype>& tensor);
 
+template<typename Dtype> MinusExp<Dtype> operator-(const Exp<Dtype>& operand);
+template<typename Dtype> Node<Dtype> operator-(const Exp<Dtype>& operand);
+
 template<typename Dtype> AbsExp<Dtype> abs(const Exp<Dtype>& operand);
 template<typename Dtype> Node<Dtype> abs(const Node<Dtype>& operand);
 
 template<typename Dtype> SigmoidExp<Dtype> sigmoid(const Exp<Dtype>& operand);
 template<typename Dtype> Node<Dtype> sigmoid(const Node<Dtype>& operand);
 
-template<typename Dtype> TransposeExp<Dtype> transpose(const Exp<Dtype>& operand);
+template<typename Dtype> MatrixTransposeExp<Dtype> transpose(const Exp<Dtype>& operand);
 template<typename Dtype> Node<Dtype> transpose(const Node<Dtype>& operand);
+
 
 template<typename Dtype> Img2ColExp<Dtype> img2col(const Exp<Dtype>& operand, 
 								                   const std::pair<index_t, index_t>& kernel_size, 

@@ -14,6 +14,18 @@ template<typename Dtype> class Tensor;
 namespace op {
 
 template<typename Dtype>
+struct MinusExp: public UnaryExp<Dtype> {
+	explicit MinusExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
+	explicit MinusExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
+	Dtype eval(index_t* ids) const {return -this->operand_->eval(ids);}
+	void backward(const Exp<Dtype>& grad) const {
+		MinusExp<Dtype> minus_grad(&grad);
+		ConstExptr<Dtype>::make_uncontrol(minus_grad);
+		this->operand_.backward(minus_grad);
+	}
+};
+
+template<typename Dtype>
 struct AbsExp: public UnaryExp<Dtype> {
 	explicit AbsExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
 	explicit AbsExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
@@ -28,12 +40,19 @@ struct SigmoidExp: public UnaryExp<Dtype> {
 };
 
 template<typename Dtype>
-struct TransposeExp: public UnaryExp<Dtype> {
-	explicit TransposeExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
-	explicit TransposeExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
+struct MatrixTransposeExp: public UnaryExp<Dtype> {
+	explicit MatrixTransposeExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
+	explicit MatrixTransposeExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
+	index_t dim(void) const {return 2;}
+	index_t size(index_t idx) const {return idx == 0 ? this->operand_->size(1) : this->operand_->size(0);}
 	Dtype eval(index_t* ids) const {
 		index_t trans_ids[2] = {ids[1], ids[0]};
 		return this->operand_->eval(trans_ids);
+	}
+	void backward(const Exp<Dtype>& grad) const {
+		MatrixTransposeExp<Dtype> trans_grad(&grad);
+		ConstExptr<Dtype>::make_uncontrol(trans_grad);
+		this->operand_.backward(trans_grad);
 	}
 };
 

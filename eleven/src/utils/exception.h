@@ -20,31 +20,24 @@ private:
     std::string func_;
     unsigned int line_;
 };
-
+class NotImplementError: public Error {
+    public: NotImplementError(const char* file, const char* func, unsigned int line);};
 class IndexOutOfRange: public Error {
-    public: IndexOutOfRange(const char* file, const char* func, unsigned int line);
-};
+    public: IndexOutOfRange(const char* file, const char* func, unsigned int line);};
 class DimNotMatch: public Error {
-    public:	DimNotMatch(const char* file, const char* func, unsigned int line);
-};
+    public:	DimNotMatch(const char* file, const char* func, unsigned int line);};
 class TensorNotContiguous: public Error {
-    public:	TensorNotContiguous(const char* file, const char* func, unsigned int line);
-};
+    public:	TensorNotContiguous(const char* file, const char* func, unsigned int line);};
 class DsizeNotMatch: public Error {
-    public: DsizeNotMatch(const char* file, const char* func, unsigned int line);
-};
+    public: DsizeNotMatch(const char* file, const char* func, unsigned int line);};
 class OperandSizeNotMatch: public Error {
-    public: OperandSizeNotMatch(const char* file, const char* func, unsigned int line);
-};
+    public: OperandSizeNotMatch(const char* file, const char* func, unsigned int line);};
 class NodeTypeWrong: public Error {
-    public: NodeTypeWrong(const char* file, const char* func, unsigned int line);
-};
+    public: NodeTypeWrong(const char* file, const char* func, unsigned int line);};
 class BackwardFailure: public Error {
-    public: BackwardFailure(const char* file, const char* func, unsigned int line);
-};
+    public: BackwardFailure(const char* file, const char* func, unsigned int line);};
 class TensorNoGrad: public Error {
-    public: TensorNoGrad(const char* file, const char* func, unsigned int line);
-};
+    public: TensorNoGrad(const char* file, const char* func, unsigned int line);};
 
 }  // namespace err
 

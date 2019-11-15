@@ -513,6 +513,10 @@ std::ostream& operator<<(std::ostream& out, const Tensor<Dtype>& src) {
     Tensor<Dtype> t(src);
     t.requires_grad_ = false;
 
+    std::ios_base::fmtflags flags = out.flags();
+    out.setf(std::ios::fixed);
+    out.precision(4);
+
     out << '[';
     if(t.dim() == 1) {
         for(index_t i = 0; i < t.size(0); i++) {
@@ -531,6 +535,8 @@ std::ostream& operator<<(std::ostream& out, const Tensor<Dtype>& src) {
         }
     }
     out << ']';
+
+    out.setf(flags);
     return out;
 }
 

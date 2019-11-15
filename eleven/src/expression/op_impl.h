@@ -12,6 +12,15 @@ inline Node<Dtype> node(const Tensor<Dtype>& tensor) {
 }
 
 template<typename Dtype>
+inline MinusExp<Dtype> operator-(const Exp<Dtype>& operand) {
+	return MinusExp<Dtype>(operand);
+}
+template<typename Dtype>
+inline Node<Dtype> operator-(const Node<Dtype>& operand) {
+	return Node<Dtype>(new MinusExp<Dtype>(operand.get_exp_ptr()));
+}
+
+template<typename Dtype>
 inline AbsExp<Dtype> abs(const Exp<Dtype>& operand) {
 	return AbsExp<Dtype>(operand);
 }
@@ -30,12 +39,14 @@ inline Node<Dtype> sigmoid(const Node<Dtype>& operand) {
 }
 
 template<typename Dtype>
-inline TransposeExp<Dtype> transpose(const Exp<Dtype>& operand) {
-	return TransposeExp<Dtype>(operand);
+inline MatrixTransposeExp<Dtype> transpose(const Exp<Dtype>& operand) {
+	CHECK_EQUAL(operand.dim(), 2, DimNotMatch,
+		"Matrix Transpose expect 2D matrix, but got %dD tensor", operand.dim());
+	return MatrixTransposeExp<Dtype>(operand);
 }
 template<typename Dtype>
 inline Node<Dtype> transpose(const Node<Dtype>& operand) {
-	return Node<Dtype>(new TransposeExp<Dtype>(operand.get_exp_ptr()));
+	return Node<Dtype>(new MatrixTransposeExp<Dtype>(operand.get_exp_ptr()));
 }
 
 template<typename Dtype>

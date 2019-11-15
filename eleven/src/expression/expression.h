@@ -33,6 +33,10 @@ namespace el {
 template<typename Dtype>
 class UnaryExp: public Exp<Dtype> {
 public:
+	// TODO: I'm considering about deletion of the constructor using reference.
+	// Because It may cause ConstExptr point to a tensor on stack storage.
+	// Deconstructor of this tensor may be called when the Exp is deconstructed,
+	// or the stack storage is released. Anyway, it's dangerous.
 	UnaryExp(const Exp<Dtype>& operand): operand_(&operand, true){}
 	UnaryExp(const Exp<Dtype>* operand): operand_(operand, true) {}
 	virtual index_t dim(void) const {return this->operand_->dim();}

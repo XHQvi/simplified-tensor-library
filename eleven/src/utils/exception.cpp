@@ -14,6 +14,9 @@ const char* Error::what() const noexcept {
     return out.str().c_str();
 }
 
+NotImplementError::NotImplementError(const char* file, const char* func, unsigned int line)
+    : Error("NotImplementError", file, func, line) {}
+
 IndexOutOfRange::IndexOutOfRange(const char* file, const char* func, unsigned int line)
     : Error("IndexOutOfRange", file, func, line) {}
 

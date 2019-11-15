@@ -2,7 +2,7 @@
 #define EXPRESSION_BINARY_EXP_H_
 
 #include "expression.h"
-#include <iostream>
+#include "unary_exp.h"
 #include "../tensor/tensor_impl.h"
 
 namespace el {
@@ -28,6 +28,13 @@ struct SubExp: public BinaryExp<Dtype> {
 	SubExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
 	SubExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand){}
 	Dtype eval(index_t* ids) const {return this->loperand_->eval(ids) - this->roperand_->eval(ids);}
+	void backward(const Exp<Dtype>& grad) const {
+		this->loperand_.backward(grad);
+
+		MinusExp<Dtype> minus_grad(&grad);
+		ConstExptr<Dtype>::make_uncontrol(minus_grad);
+		this->roperand_.backward(minus_grad);
+	}
 };
 
 template<typename Dtype>
@@ -48,7 +55,17 @@ struct MMExp: public BinaryExp<Dtype> {
 		return value;
 	}
 	void backward(const Exp<Dtype>& grad) const {
+		MatrixTransposeExp<Dtype> rtranspose(this->roperand_.get());
+		MMExp<Dtype> lgrad(&grad, &rtranspose);
+		ConstExptr<Dtype>::make_uncontrol(rtranspose);
+		ConstExptr<Dtype>::make_uncontrol(lgrad);
+		this->loperand_.backward(lgrad);
 
+		MatrixTransposeExp<Dtype> ltranspose(this->loperand_.get());
+		MMExp<Dtype> rgrad(&ltranspose, &grad);
+		ConstExptr<Dtype>::make_uncontrol(ltranspose);
+		ConstExptr<Dtype>::make_uncontrol(rgrad);
+		this->roperand_.backward(rgrad);
 	} 
 };
 
@@ -89,7 +106,9 @@ struct BMMExp: public BinaryExp<Dtype> {
 			index_t trans_ids[3] = {ids[0], ids[2], ids[1]};
 			return this->operand_->eval(trans_ids);
 		}
-		void backward(const Exp<Dtype>& grad) const {}
+		void backward(const Exp<Dtype>& grad) const {
+			THROW_ERROR(NotImplementError, "Not Implement backward for Batch Matrix Transpose.");
+		}
 	};
 	void backward(const Exp<Dtype>& grad) const {
 		BMTExp rbmt(this->roperand_.get());
