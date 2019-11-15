@@ -33,31 +33,35 @@ public:
     Tensor slice(index_t start_idx, index_t end_idx, index_t dim) const;
     Tensor transpose(index_t dim1, index_t dim2) const;
     Tensor view(const Shape& shape) const;
+    // A method with a underscore as suffix will return a ConstExptr which points to a tensor dynamically allocated.
+    Tensor* slice_(index_t idx, index_t dim=0) const;
+    Tensor* slice_(index_t start_idx, index_t end_idx, index_t dim) const;
+    Tensor* transpose_(index_t dim1, index_t dim2) const;
+    Tensor* view_(const Shape& shape) const;
     bool is_contiguous(void) const;
     Tensor& operator=(const Exp<Dtype>& src);
     Tensor& operator=(const Tensor& src);
     Tensor& operator=(const Node<Dtype>& src);
-    void backward(void) const;
+    Tensor& operator+=(const Exp<Dtype>& src);
+    void backward(const Exp<Dtype>& grad) const;
+    const Tensor& grad(void) const;
     // friend
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dtype1>& t);
-    friend Exp<Dtype>;
+    // friend Exp<Dtype>;
 private:
     Storage<Dtype> storage_;
     Shape shape_;
     IndexArray stride_;
-    // When I wrote this part, I hadn't known anything about <boost/enable_shared_from_this.hpp>.
-    // So I implemented this by myself, and this is why self_ exists.
-    mutable std::weak_ptr<const Tensor<Dtype>> self_;
 
     // auto gradient
     struct AutoGradMeta {
         Tensor<Dtype> grad_;
         bool from_view_;
-        std::shared_ptr<const Exp<Dtype>> next_exp_;
+        ConstExptr<Dtype> next_exp_;
         AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, 
-                     const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view);
+                     const Exp<Dtype>* next_exp, bool from_view);
         AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape,
-                     const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view);
+                     const Exp<Dtype>* next_exp, bool from_view);
         AutoGradMeta(const Shape& shape);
     };
     std::shared_ptr<AutoGradMeta> ag_meta_;
@@ -69,23 +73,28 @@ private:
     void set_self(const Exp<Dtype>& src);
     Dtype eval(index_t* ids) const;
     Dtype& eval(index_t* ids);
-    std::shared_ptr<const Tensor<Dtype>> shared_self(void) const;  // same as shared_from_this.
 };
 
 // ******************** constructors and methods of AutoGradMeta ********************
 template<typename Dtype>
 Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, 
-                                          const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view)
-    : grad_(storage, shape, stride, false), next_exp_(next_exp), from_view_(from_view) {}
+                                          const Exp<Dtype>* next_exp, bool from_view)
+    : grad_(storage, shape, stride, false), next_exp_(next_exp, true), from_view_(from_view) {
+    ConstExptr<Dtype>::make_uncontrol(grad_);
+}
 
 template<typename Dtype>
 Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Storage<Dtype>& storage, const Shape& shape,
-                                          const std::shared_ptr<const Exp<Dtype>>& next_exp, bool from_view)
-    : grad_(storage, shape, false), next_exp_(next_exp), from_view_(from_view) {}
+                                          const Exp<Dtype>* next_exp, bool from_view)
+    : grad_(storage, shape, false), next_exp_(next_exp, true), from_view_(from_view) {
+    ConstExptr<Dtype>::make_uncontrol(grad_);   
+}
 
 template<typename Dtype>
 Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Shape& shape)
-    : grad_(Storage<Dtype>(0, shape.dsize()), shape, false), next_exp_(nullptr), from_view_(false) {}
+    : grad_(Storage<Dtype>(shape.dsize(), 0), shape, false), next_exp_(nullptr, true), from_view_(false) {
+    ConstExptr<Dtype>::make_uncontrol(grad_);
+}
 
 
 // ******************** constructors of Tensor ********************
@@ -203,7 +212,7 @@ Tensor<Dtype> Tensor<Dtype>::slice(index_t idx, index_t dim) const {
     if(requires_grad_) {
         ret.requires_grad_ = true;
         Storage<Dtype> grad_storage(ag_meta_->grad_.storage_, stride_[dim] * idx);
-        ret.ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, shared_self(), true));
+        ret.ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, this, true));
     }
     return ret;
 }
@@ -226,7 +235,7 @@ inline Tensor<Dtype> Tensor<Dtype>::slice(index_t start_idx, index_t end_idx, in
     if(requires_grad_) {
         ret.requires_grad_ = true;
         Storage<Dtype> grad_storage(ag_meta_->grad_.storage_, stride_[dim] * start_idx);
-        ret.ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, shared_self(), true));
+        ret.ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, this, true));
     }
     return ret;
 }
@@ -249,7 +258,7 @@ inline Tensor<Dtype> Tensor<Dtype>::transpose(index_t dim1, index_t dim2) const 
     Tensor<Dtype> ret(storage_, shape, stride, false);
     if(requires_grad_) {
         ret.requires_grad_ = true;
-        ret.ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, stride, shared_self(), true));
+        ret.ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, stride, this, true));
     }
     return ret;
 }
@@ -264,9 +273,95 @@ inline Tensor<Dtype> Tensor<Dtype>::view(const Shape& shape) const {
     Tensor<Dtype> ret(storage_, shape, false);
     if(requires_grad_) {
         ret.requires_grad_ = true;
-        auto self = shared_self();
-        std::cout << self.use_count() << std::endl;
-        ret.ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, self, true));
+        ret.ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, this, true));
+    }
+    return ret;
+}
+
+template<typename Dtype>
+Tensor<Dtype>* Tensor<Dtype>::slice_(index_t idx, index_t dim) const {
+    CHECK_BETWEEN(dim, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got index on th%d dimension", shape_.dim(), idx);
+    CHECK_BETWEEN(idx, 0, shape_[dim], IndexOutOfRange,
+        "Tensor has size %d on %d dimension, but got index %d", shape_[dim], dim, idx);
+
+    Storage<Dtype> storage(storage_, stride_[dim] * idx);
+    Shape shape(shape_, dim);
+    IndexArray stride(shape_.dim() - 1);
+
+    int i = 0;
+    for(; i != dim && i < shape_.dim()-1; i++)
+        stride[i] = stride_[i];
+    for(;i < shape_.dim()-1; i++)
+        stride[i] = stride_[i+1];
+    
+    // requires_grad = false, to avoid creating extra AutoGradMeta
+    Tensor<Dtype>* ret = new Tensor<Dtype>(storage, shape, stride, false);
+    if(requires_grad_) {
+        ret->requires_grad_ = true;
+        Storage<Dtype> grad_storage(ag_meta_->grad_.storage_, stride_[dim] * idx);
+        ret->ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, this, true));
+    }
+    return ret;
+}
+
+template<typename Dtype>
+inline Tensor<Dtype>* Tensor<Dtype>::slice_(index_t start_idx, index_t end_idx, index_t dim) const {
+    CHECK_BETWEEN(dim, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got index on th%d dimension", shape_.dim(), dim);
+    CHECK_BETWEEN(start_idx, 0, shape_[dim], IndexOutOfRange,
+        "Tensor has size %d on %d dimension, but got %d index", shape_[dim], dim, start_idx);
+    CHECK_BETWEEN(end_idx, 0, shape_[dim], IndexOutOfRange,
+        "Tensor has size %d on %d dimension, but got %d index", shape_[dim], dim, end_idx);
+
+    Storage<Dtype> storage(storage_, stride_[dim] * start_idx);
+    Shape shape(shape_);
+    IndexArray stride(stride_);
+    shape[dim] = end_idx - start_idx;
+
+    Tensor<Dtype>* ret = new Tensor<Dtype>(storage, shape, stride, false);
+    if(requires_grad_) {
+        ret->requires_grad_ = true;
+        Storage<Dtype> grad_storage(ag_meta_->grad_.storage_, stride_[dim] * start_idx);
+        ret->ag_meta_.reset(new AutoGradMeta(grad_storage, shape, stride, this, true));
+    }
+    return ret;
+}
+
+template<typename Dtype>
+inline Tensor<Dtype>* Tensor<Dtype>::transpose_(index_t dim1, index_t dim2) const {
+    CHECK_BETWEEN(dim1, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got %d dimension index", shape_.dim(), dim1);
+    CHECK_BETWEEN(dim2, 0, shape_.dim(), IndexOutOfRange,
+        "%dD tensor got %d dimension index", shape_.dim(), dim2);
+
+    Shape shape(shape_);
+    shape[dim1] = shape_[dim2];
+    shape[dim2] = shape_[dim1];
+
+    IndexArray stride(stride_);
+    stride[dim1] = stride_[dim2];
+    stride[dim2] = stride_[dim1];
+    
+    Tensor<Dtype>* ret = new Tensor<Dtype>(storage_, shape, stride, false);
+    if(requires_grad_) {
+        ret->requires_grad_ = true;
+        ret->ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, stride, this, true));
+    }
+    return ret;
+}
+
+template<typename Dtype>
+inline Tensor<Dtype>* Tensor<Dtype>::view_(const Shape& shape) const {
+    CHECK_TRUE(is_contiguous(), TensorNotContiguous,
+        "The tensor can't be viewed, which is not is_contiguous");
+    CHECK_EQUAL(shape.dsize(), shape_.dsize(), DsizeNotMatch,
+        "Got shape with dsize %d doesn't match original dsize %d", shape.dsize(), shape_.dsize());
+
+    Tensor<Dtype>* ret = new Tensor<Dtype>(storage_, shape, false);
+    if(requires_grad_) {
+        ret->requires_grad_ = true;
+        ret->ag_meta_.reset(new AutoGradMeta(ag_meta_->grad_.storage_, shape, this, true));
     }
     return ret;
 }
@@ -277,18 +372,6 @@ bool Tensor<Dtype>::is_contiguous(void) const {
         if(stride_[i-1] != shape_.subsize(i))
             return false;
     return true;
-}
-
-template<typename Dtype>
-std::shared_ptr<const Tensor<Dtype>> Tensor<Dtype>::shared_self(void) const {
-    if(!ag_meta_) return nullptr;
-
-    auto temp = self_.lock();
-    if(!temp) {
-        temp.reset(this);
-        self_ = temp;
-    }
-    return temp;
 }
 
 template<typename Dtype>
@@ -321,13 +404,17 @@ void Tensor<Dtype>::set_self(const Exp<Dtype>& src) {
     index_t num_dim = shape_.dim();
     index_t* loc = new index_t[num_dim];
     index_t idx = 0;
-    for(int i = 0; i < num_dim; i++) loc[i] = -1;
+    IndexArray shape(num_dim);
+    for(int i = 0; i < num_dim; i++) {
+        loc[i] = -1;
+        shape[i] = std::max(shape_[i], src.size(i));  // broadcasting
+    }
 
     while(idx >= 0)  {
         if(idx == num_dim) {
             eval(loc) = src.eval(loc);
             idx --; 
-        } else if(loc[idx] < shape_[idx] - 1) {
+        } else if(loc[idx] < shape[idx] - 1) {
             loc[idx] ++;
             if(idx < num_dim - 1) loc[idx+1] = -1;
             idx++;
@@ -366,22 +453,66 @@ inline Tensor<Dtype>& Tensor<Dtype>::operator=(const Node<Dtype>& src) {
     CHECK_BROADCAST(*this, src_exp);
     set_self(src_exp);
     if(requires_grad_)
-        ag_meta_->next_exp_ = src.get_exp_ptr();
+        ag_meta_->next_exp_.reset(src.get_exp_ptr(), true);
     return *this;
 }
 
 template<typename Dtype>
-inline void Tensor<Dtype>::backward(void) const {
-    if(!requires_grad_) return;
+inline Tensor<Dtype>& Tensor<Dtype>::operator+=(const Exp<Dtype>& src) {
+    CHECK_BROADCAST(*this, src);
+    index_t num_dim = shape_.dim();
+    index_t* loc = new index_t[num_dim];
+    index_t idx = 0;
+    IndexArray shape(num_dim);
+    for(int i = 0; i < num_dim; i++) {
+        loc[i] = -1;
+        shape[i] = std::max(shape_[i], src.size(i));
+    }
 
-    std::cout << "tensor backward" << std::endl;
-    
-    if(ag_meta_->next_exp_)
-        ag_meta_->next_exp_->backward();
+    while(idx >= 0)  {
+        if(idx == num_dim) {
+            eval(loc) += src.eval(loc);
+            idx --; 
+        } else if(loc[idx] < shape[idx] - 1) {
+            loc[idx] ++;
+            if(idx < num_dim - 1) loc[idx+1] = -1;
+            idx++;
+        } else idx--;
+    }
+    delete [] loc;
+    storage_.version_forward();
 }
 
 template<typename Dtype>
-std::ostream& operator<<(std::ostream& out, const Tensor<Dtype>& t) {
+inline void Tensor<Dtype>::backward(const Exp<Dtype>& grad) const {
+    if(!requires_grad_) return;
+
+    ag_meta_->grad_ += grad;
+    if(ag_meta_->next_exp_ && ConstExptr<Dtype>::grad_ready(*this)) {
+        if(ag_meta_->from_view_) {
+            index_t dsize = ag_meta_->next_exp_->dim();
+            Storage<Dtype> storage(dsize, 0);
+            Tensor<Dtype> view_grad(storage, Shape(1, dsize), false);
+            ConstExptr<Dtype>::make_uncontrol(view_grad);
+            ag_meta_->next_exp_.backward(view_grad);
+        } else {
+            ag_meta_->next_exp_.backward(ag_meta_->grad_);
+        }
+    }
+}
+
+template<typename Dtype>
+inline const Tensor<Dtype>& Tensor<Dtype>::grad(void) const {
+    CHECK_TRUE(requires_grad_, TensorNoGrad,
+        "Call grad() on a tensor with requires_grad false.");
+    return ag_meta_->grad_;
+}
+
+template<typename Dtype>
+std::ostream& operator<<(std::ostream& out, const Tensor<Dtype>& src) {
+    Tensor<Dtype> t(src);
+    t.requires_grad_ = false;
+
     out << '[';
     if(t.dim() == 1) {
         for(index_t i = 0; i < t.size(0); i++) {

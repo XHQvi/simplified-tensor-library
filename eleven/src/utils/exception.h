@@ -42,6 +42,10 @@ class NodeTypeWrong: public Error {
 class BackwardFailure: public Error {
     public: BackwardFailure(const char* file, const char* func, unsigned int line);
 };
+class TensorNoGrad: public Error {
+    public: TensorNoGrad(const char* file, const char* func, unsigned int line);
+};
+
 }  // namespace err
 
 #define ERROR_LOCATION __FILE__, __func__, __LINE__

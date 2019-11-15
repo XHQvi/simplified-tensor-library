@@ -28,13 +28,13 @@ Tensor<float_t> rand(const Shape& shape) {
 
 Tensor<float_t> ones(const Shape& shape) {
 	index_t dsize = shape.dsize();
-	Storage<float_t> storage{1, dsize};
+	Storage<float_t> storage{dsize, 1};
 	return Tensor<float_t>(storage, shape);
 }
 
 Tensor<float_t> zeros(const Shape& shape) {
 	index_t dsize = shape.dsize();
-	Storage<float_t> storage{0, dsize};
+	Storage<float_t> storage{dsize, 0};
 	return Tensor<float_t>(storage, shape);	
 }
 

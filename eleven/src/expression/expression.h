@@ -5,47 +5,55 @@
 #include <memory>
 #include <initializer_list>
 #include "../utils/base.h"
-#include "unary_exp.h"
-#include "binary_exp.h"
 
 namespace el {
+template<typename Dtype> class ConstExptr;
+template<typename Dtype> class Node;
 
-template<typename Dtype> class Tensor;
-
-// TODO: declare backward as private
 template<typename Dtype>
 class Exp {
+private:
+	mutable index_t refcount_ = 0;
+	mutable index_t gradcount_ = 0;
+	virtual void backward(const Exp<Dtype>& grad) const = 0;
 public:
 	virtual Dtype eval(index_t* ids) const = 0;
 	virtual index_t dim(void) const = 0;
 	virtual index_t size(index_t idx) const = 0;
-	virtual void backward(void) const = 0;
 	virtual ~Exp() {};
+	friend class ConstExptr<Dtype>;
+	friend class Node<Dtype>;
 };
+}  // namespace el
+
+#include "const_exptr.h"
+
+namespace el {
 
 template<typename Dtype>
 class UnaryExp: public Exp<Dtype> {
 public:
-	UnaryExp(const Exp<Dtype>& operand): operand_(&operand){}
-	UnaryExp(const std::shared_ptr<const Exp<Dtype>>& operand): operand_(operand) {}
+	UnaryExp(const Exp<Dtype>& operand): operand_(&operand, true){}
+	UnaryExp(const Exp<Dtype>* operand): operand_(operand, true) {}
 	virtual index_t dim(void) const {return this->operand_->dim();}
 	virtual index_t size(index_t idx) const {return this->operand_->size(idx);}
 protected:
-	const std::shared_ptr<const Exp<Dtype>> operand_;
+	const ConstExptr<Dtype> operand_;
 };
 
 template<typename Dtype>
 struct BinaryExp: public Exp<Dtype> {
 public:
-	BinaryExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): roperand_(&roperand), loperand_(&loperand){}
-	BinaryExp(const std::shared_ptr<Exp<Dtype>>& loperand, const std::shared_ptr<Exp<Dtype>>& roperand): roperand_(roperand), loperand_(loperand){}
+	BinaryExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand)
+		    : roperand_(&roperand, true), loperand_(&loperand, true){}
+	BinaryExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand)
+			: roperand_(roperand, true), loperand_(loperand, true){}
 	virtual index_t dim(void) const {return this->roperand_->dim();}
 	virtual index_t size(index_t idx) const {return std::max(this->roperand_->size(idx), this->loperand_->size(idx));}
-protected:	
-	const std::shared_ptr<const Exp<Dtype>> loperand_;
-	const std::shared_ptr<const Exp<Dtype>> roperand_;
+protected:
+	const ConstExptr<Dtype> loperand_;
+	const ConstExptr<Dtype> roperand_;
 };
-
 } // namespace el
 
 

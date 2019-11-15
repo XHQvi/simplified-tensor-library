@@ -35,5 +35,8 @@ NodeTypeWrong::NodeTypeWrong(const char* file, const char* func, unsigned int li
 BackwardFailure::BackwardFailure(const char* file, const char* func, unsigned int line)
     : Error("BackwardFailure", file, func, line) {}
 
+TensorNoGrad::TensorNoGrad(const char* file, const char* func, unsigned int line) 
+    : Error("TensorNoGrad", file, func, line) {};
+
 }  // namespace err
 }  // namespace el

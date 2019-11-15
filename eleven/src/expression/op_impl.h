@@ -1,8 +1,7 @@
 #ifndef EXPRESSION_OP_IMPL_H_
 #define EXPRESSION_OP_IMPL_H_
 
-#include "expression.h"
-#include "node.h"
+#include "op.h"
 
 namespace el {
 namespace op {
@@ -28,6 +27,15 @@ inline SigmoidExp<Dtype> sigmoid(const Exp<Dtype>& operand) {
 template<typename Dtype>
 inline Node<Dtype> sigmoid(const Node<Dtype>& operand) {
 	return Node<Dtype>(new SigmoidExp<Dtype>(operand.get_exp_ptr()));
+}
+
+template<typename Dtype>
+inline TransposeExp<Dtype> transpose(const Exp<Dtype>& operand) {
+	return TransposeExp<Dtype>(operand);
+}
+template<typename Dtype>
+inline Node<Dtype> transpose(const Node<Dtype>& operand) {
+	return Node<Dtype>(new TransposeExp<Dtype>(operand.get_exp_ptr()));
 }
 
 template<typename Dtype>

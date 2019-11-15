@@ -3,6 +3,7 @@
 
 #include "expression.h"
 #include <iostream>
+#include "../tensor/tensor_impl.h"
 
 namespace el {
 
@@ -14,29 +15,25 @@ namespace op {
 template<typename Dtype>
 struct AddExp: public BinaryExp<Dtype> {
 	AddExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
-	AddExp(const std::shared_ptr<Exp<Dtype>>& loperand, const std::shared_ptr<Exp<Dtype>>& roperand)
-		: BinaryExp<Dtype>(loperand, roperand){}
+	AddExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand) {}
 	Dtype eval(index_t* ids) const {return this->loperand_->eval(ids) + this->roperand_->eval(ids);}
-	void backward(void) const {
-		std::cout << "add backward" << std::endl;
-		this->loperand_->backward();
-		this->roperand_->backward();
+	void backward(const Exp<Dtype>& grad) const {
+		this->loperand_.backward(grad);
+		this->roperand_.backward(grad);
 	}
 };
 
 template<typename Dtype>
 struct SubExp: public BinaryExp<Dtype> {
 	SubExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
-	SubExp(const std::shared_ptr<Exp<Dtype>>& loperand, const std::shared_ptr<Exp<Dtype>>& roperand)
-		: BinaryExp<Dtype>(loperand, roperand){}
+	SubExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand){}
 	Dtype eval(index_t* ids) const {return this->loperand_->eval(ids) - this->roperand_->eval(ids);}
 };
 
 template<typename Dtype>
 struct MMExp: public BinaryExp<Dtype> {
 	MMExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
-	MMExp(const std::shared_ptr<Exp<Dtype>>& loperand, const std::shared_ptr<Exp<Dtype>>& roperand)
-		: BinaryExp<Dtype>(loperand, roperand){}
+	MMExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand){}
 	index_t dim(void) const {return 2;}
 	index_t size(index_t idx) const {return idx == 0 ? this->loperand_->size(0) : this->roperand_->size(1);}
 	Dtype eval(index_t* ids) const {
@@ -50,12 +47,15 @@ struct MMExp: public BinaryExp<Dtype> {
 		}
 		return value;
 	}
+	void backward(const Exp<Dtype>& grad) const {
+
+	} 
 };
 
 template<typename Dtype>
 struct BMMExp: public BinaryExp<Dtype> {
 	BMMExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
-	BMMExp(const std::shared_ptr<Exp<Dtype>>& loperand, const std::shared_ptr<Exp<Dtype>>& roperand): BinaryExp<Dtype>(loperand, roperand){}
+	BMMExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand){}
 	index_t dim(void) const {return 3;}
 	index_t size(index_t idx) const {
 		switch(idx) {
@@ -75,10 +75,34 @@ struct BMMExp: public BinaryExp<Dtype> {
 		}
 		return value;
 	}
-	void backward(void) const {
-		std::cout << "bmm backward" << std::endl;
-		this->loperand_->backward();
-		this->roperand_->backward();
+	struct BMTExp: public UnaryExp<Dtype> {
+		BMTExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
+		index_t dim(void) const {return 3;}
+		index_t size(index_t idx) const {
+			switch(idx) {
+				case 0: return this->operand_->size(0);
+				case 1: return this->operand_->size(2);
+				default: return this->operand_->size(1);
+			}
+		}
+		Dtype eval(index_t* ids) const {
+			index_t trans_ids[3] = {ids[0], ids[2], ids[1]};
+			return this->operand_->eval(trans_ids);
+		}
+		void backward(const Exp<Dtype>& grad) const {}
+	};
+	void backward(const Exp<Dtype>& grad) const {
+		BMTExp rbmt(this->roperand_.get());
+		BMMExp<Dtype> lgrad(&grad, &rbmt);
+		ConstExptr<Dtype>::make_uncontrol(rbmt);
+		ConstExptr<Dtype>::make_uncontrol(lgrad);
+		this->loperand_.backward(lgrad);
+
+		BMTExp lbmt(this->loperand_.get());
+		BMMExp<Dtype> rgrad(&lbmt, &grad);
+		ConstExptr<Dtype>::make_uncontrol(lbmt);
+		ConstExptr<Dtype>::make_uncontrol(rgrad);
+		this->roperand_.backward(rgrad);
 	}
 };
 

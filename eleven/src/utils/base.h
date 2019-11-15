@@ -7,6 +7,8 @@
 namespace el {
 
 using index_t = int;
+#define INDEX_MAX INT_MAX
+
 using float_t = double;
 using int_t = int;
 #define TENSOR_DEFAULT_TYPE float_t

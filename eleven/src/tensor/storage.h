@@ -1,7 +1,8 @@
 #ifndef TENSOR_STORAGE_H_
 #define TENSOR_STORAGE_H_
 
-#include<cstring>
+#include <cstring>
+#include <iostream>
 #include "../utils/base.h"
 
 namespace el {
@@ -27,8 +28,9 @@ public:
     Storage(const Dtype* data, index_t dsize): Storage(dsize) {
         memcpy(dptr_, data, dsize*sizeof(Dtype));
     }
-    Storage(int value, index_t dsize): Storage(dsize) {
-        memset(dptr_, value, dsize*sizeof(Dtype));
+    Storage(index_t dsize, Dtype value): Storage(dsize) {
+        for(index_t i = 0; i < dsize; i++)
+            dptr_[i] = value;
     }
     // method
     const Dtype& operator[](index_t i) const {return dptr_[i];}

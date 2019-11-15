@@ -7,12 +7,17 @@
 
 namespace el{
 
+template<typename Dtype> class Exp;
+
 class Shape {
 public:
     // constructor
     Shape(std::initializer_list<index_t> dims);
     Shape(const Shape& other) = default;
     Shape(const Shape& other, index_t skip);
+    Shape(index_t value, index_t dim);
+    template<typename Dtype> Shape(const Exp<Dtype>& exp);
+
     // method
     index_t dsize() const;
     index_t subsize(index_t start_dim, index_t end_dim) const;
@@ -26,5 +31,12 @@ private:
     IndexArray dims_;
 };
  
+template<typename Dtype>
+Shape::Shape(const Exp<Dtype>& exp) 
+    : dims_(exp.dim()) {
+    for(index_t i = 0; i < dims_.size(); i++)
+        dims_[i] = exp.size(i);
+}
+
 }  // namespace el
 #endif // TENSOR_SHAPE_H_

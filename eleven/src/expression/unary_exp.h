@@ -16,15 +16,25 @@ namespace op {
 template<typename Dtype>
 struct AbsExp: public UnaryExp<Dtype> {
 	explicit AbsExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
-	explicit AbsExp(const std::shared_ptr<const Exp<Dtype>>& operand): UnaryExp<Dtype>(operand) {}
+	explicit AbsExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
 	Dtype eval(index_t* ids) const {return std::abs(this->operand_->eval(ids));}
 };
 
 template<typename Dtype>
 struct SigmoidExp: public UnaryExp<Dtype> {
 	explicit SigmoidExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
-	explicit SigmoidExp(const std::shared_ptr<const Exp<Dtype>>& operand): UnaryExp<Dtype>(operand) {}
+	explicit SigmoidExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
 	Dtype eval(index_t* ids) const {return 1 / (1+std::exp(-this->operand_->eval(ids)));}
+};
+
+template<typename Dtype>
+struct TransposeExp: public UnaryExp<Dtype> {
+	explicit TransposeExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
+	explicit TransposeExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
+	Dtype eval(index_t* ids) const {
+		index_t trans_ids[2] = {ids[1], ids[0]};
+		return this->operand_->eval(trans_ids);
+	}
 };
 
 template<typename Dtype>
@@ -43,7 +53,7 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 		out_size_.second = 
 			(this->operand_->size(3) + 2 * padding_.second - kernel_size_.second) / stride_.second + 1;
 	}
-	explicit Img2ColExp(const std::shared_ptr<Exp<Dtype>>& operand, 
+	explicit Img2ColExp(const Exp<Dtype>* operand, 
 						const std::pair<index_t, index_t> kernel_size, 
 					    const std::pair<index_t, index_t> stride, 
 					    const std::pair<index_t, index_t> padding)
@@ -83,7 +93,7 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 		h_idx = h_idx * stride_.first - padding_.first;
 		w_idx = w_idx * stride_.second - padding_.second;
 
-		// {h_idx, w_idx} can be seen as the location of a pathc's first pixel(top left pixel),
+		// {h_idx, w_idx} can be seen as the location of a patch's first pixel(top left pixel),
 		// {kh_idx, kw_idx} can be seen as a pixel's location in this patch.
 		// The final location can be out of the origin img because of padding, and just return 0.
 		loc[2] = h_idx + kh_idx;
@@ -93,9 +103,8 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 		return this->operand_->eval(loc);
 	}
 
-	void backward(void) const {
-		std::cout << "img2col backward" << std::endl;
-		this->operand_->backward();
+	void backward(const Exp<Dtype>& grad) const {
+		
 	}
 };
 

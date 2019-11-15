@@ -2,6 +2,8 @@
 #define EXPRESSION_OP_H_
 
 #include "node.h"
+#include "unary_exp.h"
+#include "binary_exp.h"
 #include "op_impl.h"
 #include "../tensor/tensor_impl.h"
 
@@ -18,6 +20,9 @@ template<typename Dtype> Node<Dtype> abs(const Node<Dtype>& operand);
 
 template<typename Dtype> SigmoidExp<Dtype> sigmoid(const Exp<Dtype>& operand);
 template<typename Dtype> Node<Dtype> sigmoid(const Node<Dtype>& operand);
+
+template<typename Dtype> TransposeExp<Dtype> transpose(const Exp<Dtype>& operand);
+template<typename Dtype> Node<Dtype> transpose(const Node<Dtype>& operand);
 
 template<typename Dtype> Img2ColExp<Dtype> img2col(const Exp<Dtype>& operand, 
 								                   const std::pair<index_t, index_t>& kernel_size, 

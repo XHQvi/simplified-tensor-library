@@ -22,33 +22,26 @@ void print10(index_t t) {
 
 int main()
 {
-{
 	const index_t dsize = 2*3*8*7;
 	double data[dsize];
 	for(int i = 0; i < dsize; i++)
 		data[i] = i * 0.1;
-	Tensor<> images(data, {2, 3, 8, 7}, true);
+	Tensor<> images(data, {2, 3, 8, 7}, false);
 
 	nn::Conv2d conv(/*in_features=*/3,
 					/*out_features=*/3, 
 					/*kernel_size=*/{2, 3}, 
 					/*stride=*/{3, 2}, 
 					/*padding=*/{2, 1});
-	cout << conv.weight_.size() << endl;
-	cout << conv.bias_.size() << endl;
 
-	double weight_data[54], bias_data[3];
-	for(int i = 0; i < 54; i++)
-		weight_data[i] = i * 0.01;
-	for(int i = 0; i < 3; i++)
-		bias_data[i] = i * 0.05;
-	conv.weight_ = Tensor<>(weight_data, {1, 3, 18});
-	conv.bias_ = Tensor<>(bias_data, {1, 3, 1});
-
+	cout << "forward" << endl;
 	auto result = conv.forward(op::node(images));
-	// print10(result.get_tensor());
+	cout << "backward" << endl;
 	result.backward();
-}
 
+	auto grad_weight = conv.weight_.get_tensor().grad();
+	auto grad_bias = conv.bias_.get_tensor().grad();
+	print10(grad_weight);
+	print10(grad_bias);
 	return 0;
 }
