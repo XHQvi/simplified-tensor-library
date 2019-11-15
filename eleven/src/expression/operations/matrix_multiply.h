@@ -1,41 +1,11 @@
-#ifndef EXPRESSION_BINARY_EXP_H_
-#define EXPRESSION_BINARY_EXP_H_
+#ifndef EXPRESSION_OPERATIONS_MATRIX_MULTIPLY_H_
+#define EXPRESSION_OPERATIONS_MATRIX_MULTIPLY_H_
 
-#include "expression.h"
-#include "unary_exp.h"
-#include "../tensor/tensor_impl.h"
+#include "base_ops.h"
+#include "../expression.h"
 
 namespace el {
-
-template<typename Dtype> struct Exp;
-template<typename Dtype> struct BinaryExp;
-
 namespace op {
-
-template<typename Dtype>
-struct AddExp: public BinaryExp<Dtype> {
-	AddExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
-	AddExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand) {}
-	Dtype eval(index_t* ids) const {return this->loperand_->eval(ids) + this->roperand_->eval(ids);}
-	void backward(const Exp<Dtype>& grad) const {
-		this->loperand_.backward(grad);
-		this->roperand_.backward(grad);
-	}
-};
-
-template<typename Dtype>
-struct SubExp: public BinaryExp<Dtype> {
-	SubExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
-	SubExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand){}
-	Dtype eval(index_t* ids) const {return this->loperand_->eval(ids) - this->roperand_->eval(ids);}
-	void backward(const Exp<Dtype>& grad) const {
-		this->loperand_.backward(grad);
-
-		MinusExp<Dtype> minus_grad(&grad);
-		ConstExptr<Dtype>::make_uncontrol(minus_grad);
-		this->roperand_.backward(minus_grad);
-	}
-};
 
 template<typename Dtype>
 struct MMExp: public BinaryExp<Dtype> {
@@ -125,7 +95,7 @@ struct BMMExp: public BinaryExp<Dtype> {
 	}
 };
 
-} //namespace op
-} // namespace el
+}  // namespace op
+}  // namespace el
 
 #endif

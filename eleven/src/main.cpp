@@ -47,7 +47,7 @@ int main()
 	const index_t dsize = 4*3;
 	double data1[dsize], data2[dsize];
 	for(int i = 0; i < dsize; i++) {
-		data1[i] = i * 0.1;
+		data1[i] = i * 0.1 + 0.6;
 		data2[i] = i * 0.2;
 	}
 
@@ -59,11 +59,15 @@ int main()
 
 	auto n1 = op::node(t1);
 	auto n2 = op::node(t2);
-	t3 = op::mm(-op::transpose(n1), n2);
+	auto n3 = op::mm(op::relu(op::transpose(n1 - n2)), op::sigmoid(n1));
+	auto n4 = n3 * op::mm(op::transpose(n1), op::sigmoid(n2));
+
+	t3 = n4;
 	print10(t3);
 	op::node(t3).backward();
 	print10(t1.grad());
 	print10(t2.grad());
+
 
 	return 0;
 }

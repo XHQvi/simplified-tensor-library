@@ -1,60 +1,10 @@
-#ifndef EXPRESSION_UNARY_EXP_H_
-#define EXPRESSION_UNARY_EXP_H_
+#ifndef EXPRESSION_OPERATIONS_IMG2COL_H_
+#define EXPRESSION_OPERATIONS_IMG2COL_H_
 
-#include <cmath>
-#include "expression.h"
-#include <iostream>
+#include "../expression.h"
 
 namespace el {
-
-template<typename Dtype> class Exp;
-template<typename Dtype> class UnaryExp;
-template<typename Dtype> class Tensor;
-
 namespace op {
-
-template<typename Dtype>
-struct MinusExp: public UnaryExp<Dtype> {
-	explicit MinusExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
-	explicit MinusExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
-	Dtype eval(index_t* ids) const {return -this->operand_->eval(ids);}
-	void backward(const Exp<Dtype>& grad) const {
-		MinusExp<Dtype> minus_grad(&grad);
-		ConstExptr<Dtype>::make_uncontrol(minus_grad);
-		this->operand_.backward(minus_grad);
-	}
-};
-
-template<typename Dtype>
-struct AbsExp: public UnaryExp<Dtype> {
-	explicit AbsExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
-	explicit AbsExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
-	Dtype eval(index_t* ids) const {return std::abs(this->operand_->eval(ids));}
-};
-
-template<typename Dtype>
-struct SigmoidExp: public UnaryExp<Dtype> {
-	explicit SigmoidExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
-	explicit SigmoidExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
-	Dtype eval(index_t* ids) const {return 1 / (1+std::exp(-this->operand_->eval(ids)));}
-};
-
-template<typename Dtype>
-struct MatrixTransposeExp: public UnaryExp<Dtype> {
-	explicit MatrixTransposeExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
-	explicit MatrixTransposeExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
-	index_t dim(void) const {return 2;}
-	index_t size(index_t idx) const {return idx == 0 ? this->operand_->size(1) : this->operand_->size(0);}
-	Dtype eval(index_t* ids) const {
-		index_t trans_ids[2] = {ids[1], ids[0]};
-		return this->operand_->eval(trans_ids);
-	}
-	void backward(const Exp<Dtype>& grad) const {
-		MatrixTransposeExp<Dtype> trans_grad(&grad);
-		ConstExptr<Dtype>::make_uncontrol(trans_grad);
-		this->operand_.backward(trans_grad);
-	}
-};
 
 template<typename Dtype>
 struct Img2ColExp: public UnaryExp<Dtype> {
@@ -127,7 +77,7 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 	}
 };
 
-} // namespace op
-} // namespace el
+}  // namespace op
+}  // namespace el
 
 #endif

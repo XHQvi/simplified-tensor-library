@@ -21,12 +21,12 @@ inline Node<Dtype> operator-(const Node<Dtype>& operand) {
 }
 
 template<typename Dtype>
-inline AbsExp<Dtype> abs(const Exp<Dtype>& operand) {
-	return AbsExp<Dtype>(operand);
+inline ReLUExp<Dtype> relu(const Exp<Dtype>& operand) {
+	return ReLUExp<Dtype>(operand);
 }
 template<typename Dtype>
-inline Node<Dtype> abs(const Node<Dtype>& operand) {
-	return Node<Dtype>(new AbsExp<Dtype>(operand.get_exp_ptr()));
+inline Node<Dtype> relu(const Node<Dtype>& operand) {
+	return Node<Dtype>(new ReLUExp<Dtype>(operand.get_exp_ptr()));
 }
 
 template<typename Dtype>
@@ -100,6 +100,17 @@ template<typename Dtype>
 inline Node<Dtype> operator-(const Node<Dtype>& loperand, const Node<Dtype>& roperand) {
 	CHECK_BROADCAST(loperand, roperand);
 	return Node<Dtype>(new SubExp<Dtype>(loperand.get_exp_ptr(), roperand.get_exp_ptr()));
+}
+
+template<typename Dtype>
+inline MulExp<Dtype> operator*(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
+	CHECK_BROADCAST(loperand, roperand);
+	return MulExp<Dtype>(loperand, roperand);
+}
+template<typename Dtype>
+inline Node<Dtype> operator*(const Node<Dtype>& loperand, const Node<Dtype>& roperand) {
+	CHECK_BROADCAST(loperand, roperand);
+	return Node<Dtype>(new MulExp<Dtype>(loperand.get_exp_ptr(), roperand.get_exp_ptr()));
 }
 
 template<typename Dtype>
