@@ -14,7 +14,7 @@ struct SigmoidExp: public UnaryExp<Dtype> {
 	Dtype eval(index_t* ids) const {return 1 / (1+std::exp(-this->operand_->eval(ids)));}
 	
 	struct GradExp: public UnaryExp<Dtype> {
-		explicit GradExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
+		explicit GradExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
 		Dtype eval(index_t* ids) const {
 			Dtype value = this->operand_->eval(ids);
 			return value * (1 - value);
@@ -25,8 +25,8 @@ struct SigmoidExp: public UnaryExp<Dtype> {
 	};
 
 	void backward(const Exp<Dtype>& grad) const {
-		GradExp sigmoid_grad(this);
-		MulExp<Dtype> fgrad(&sigmoid_grad, &grad);
+		GradExp sigmoid_grad(*this);
+		MulExp<Dtype> fgrad(sigmoid_grad, grad);
 		ConstExptr<Dtype>::make_uncontrol(sigmoid_grad);
 		ConstExptr<Dtype>::make_uncontrol(fgrad);
 		this->operand_.backward(fgrad);

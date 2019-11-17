@@ -14,10 +14,15 @@ Shape::Shape(const  Shape& other, index_t skip)
 		dims_[i] = other[i+1];
 }
 
-Shape::Shape(index_t value, index_t dim)
+Shape::Shape(index_t* dims, index_t dim)
 	: dims_(dim) {
-	for(index_t i = 0; i < dim; i++)
-		dims_[i] = value;
+	if(dims != nullptr) {
+		for(index_t i = 0; i < dim; i++)
+			dims_[i] = dims[i];
+	} else {
+		for(index_t i = 0; i < dim; i++)
+			dims_[i] = 1;
+	}
 }
 
 index_t Shape::dsize() const {

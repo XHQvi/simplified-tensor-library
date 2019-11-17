@@ -1,8 +1,6 @@
 #ifndef TENSOR_TENSOR_H_
 #define TENSOR_TENSOR_H_
 
-#include <random>
-#include <ctime>
 #include "tensor_impl.h"
 
 namespace el{

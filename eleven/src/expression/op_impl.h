@@ -12,6 +12,11 @@ inline Node<Dtype> node(const Tensor<Dtype>& tensor) {
 }
 
 template<typename Dtype>
+inline Node<Dtype> node(const Tensor<Dtype>* tensor) {
+	return Node<Dtype>(tensor);
+}
+
+template<typename Dtype>
 inline MinusExp<Dtype> operator-(const Exp<Dtype>& operand) {
 	return MinusExp<Dtype>(operand);
 }
@@ -137,9 +142,9 @@ inline Node<Dtype> mm(const Node<Dtype>& loperand, const Node<Dtype>& roperand) 
 template<typename Dtype>
 inline BMMExp<Dtype> bmm(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand) {
 	CHECK_EQUAL(loperand.dim(), 3, OperandSizeNotMatch,
-		"BMM need 2D Tensor, but got %dD.", loperand.dim());
+		"BMM need 3D Tensor, but got %dD.", loperand.dim());
 	CHECK_EQUAL(roperand.dim(), 3, OperandSizeNotMatch,
-		"BMM need 2D Tensor, but got %dD.", roperand.dim());
+		"BMM need 3D Tensor, but got %dD.", roperand.dim());
 	CHECK_EQUAL(loperand.size(2), roperand.size(1), OperandSizeNotMatch,
 		"BMM need lsize(2) and rsize(1) equal, but got size %d and %d.", loperand.size(2), roperand.size(1));
 	// no check for loperand.size(0) == roperand(0), which means allow broadcasting on batch dimension.
@@ -148,9 +153,9 @@ inline BMMExp<Dtype> bmm(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand)
 template<typename Dtype>
 inline Node<Dtype> bmm(const Node<Dtype>& loperand, const Node<Dtype>& roperand) {
 	CHECK_EQUAL(loperand.dim(), 3, OperandSizeNotMatch,
-		"BMM need 2D Tensor, but got %dD.", loperand.dim());
+		"BMM need 3D Tensor, but got %dD.", loperand.dim());
 	CHECK_EQUAL(roperand.dim(), 3, OperandSizeNotMatch,
-		"BMM need 2D Tensor, but got %dD.", roperand.dim());
+		"BMM need 3D Tensor, but got %dD.", roperand.dim());
 	CHECK_EQUAL(loperand.size(2), roperand.size(1), OperandSizeNotMatch,
 		"BMM need lsize(2) and rsize(1) equal, but got size %d and %d.", loperand.size(2), roperand.size(1));
 	// no check for loperand.size(0) == roperand(0), which means allow broadcasting on batch dimension.

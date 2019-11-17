@@ -13,7 +13,7 @@ struct ReLUExp: public UnaryExp<Dtype> {
 	Dtype eval(index_t* ids) const {return std::max((Dtype)0, this->operand_->eval(ids));}
 	
 	struct GradExp: public BinaryExp<Dtype> {
-		explicit GradExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand)
+		explicit GradExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand)
 			: BinaryExp<Dtype>(loperand, roperand) {}
 		Dtype eval(index_t* ids) const {
 			return this->loperand_->eval(ids) > 0 ? this->roperand_->eval(ids) : 0;
@@ -24,7 +24,7 @@ struct ReLUExp: public UnaryExp<Dtype> {
 	};
 
 	void backward(const Exp<Dtype>& grad) const {
-		GradExp relu_grad(this->operand_.get(), &grad);
+		GradExp relu_grad(*this->operand_, grad);
 		ConstExptr<Dtype>::make_uncontrol(relu_grad);
 		this->operand_.backward(relu_grad);
 	}

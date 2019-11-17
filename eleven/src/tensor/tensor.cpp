@@ -1,4 +1,6 @@
 #include "tensor.h"
+#include <random>
+#include <ctime>
 
 namespace el {
 

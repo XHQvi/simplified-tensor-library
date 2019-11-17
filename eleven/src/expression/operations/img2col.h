@@ -73,7 +73,7 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 	}
 
 	void backward(const Exp<Dtype>& grad) const {
-		
+		THROW_ERROR(NotImplementError, "Img2Col' backward has not been implemented.");
 	}
 };
 

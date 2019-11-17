@@ -20,6 +20,7 @@ using op::operator*;
 
 namespace op {
 template<typename Dtype> Node<Dtype> node(const Tensor<Dtype>& tensor);
+template<typename Dtype> Node<Dtype> node(const Tensor<Dtype>* tensor);
 
 template<typename Dtype> MinusExp<Dtype> operator-(const Exp<Dtype>& operand);
 template<typename Dtype> Node<Dtype> operator-(const Exp<Dtype>& operand);

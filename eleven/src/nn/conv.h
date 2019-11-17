@@ -1,13 +1,12 @@
 #ifndef NN_CONV_H_
 #define NN_CONV_H_
 
-#include "../tensor/tensor.h"
-#include "../expression/op.h"
+#include "module.h"
 
 namespace el {
 namespace nn {
 
-class Conv2d {
+class Conv2d: public Module {
 public:
     Node<float_t> weight_;
     Node<float_t> bias_;
@@ -25,6 +24,8 @@ public:
            index_t padding);
 
     Node<float_t> forward(const Node<float_t>& imgs);
+    const NamedParamMap parameters(void);
+
 private:
     index_t in_features_, out_features_;
     std::pair<index_t, index_t> kernel_size_;

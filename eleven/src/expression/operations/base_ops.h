@@ -12,7 +12,7 @@ struct MinusExp: public UnaryExp<Dtype> {
 	explicit MinusExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
 	Dtype eval(index_t* ids) const {return -this->operand_->eval(ids);}
 	void backward(const Exp<Dtype>& grad) const {
-		MinusExp<Dtype> minus_grad(&grad);
+		MinusExp<Dtype> minus_grad(grad);
 		ConstExptr<Dtype>::make_uncontrol(minus_grad);
 		this->operand_.backward(minus_grad);
 	}
@@ -29,7 +29,7 @@ struct MatrixTransposeExp: public UnaryExp<Dtype> {
 		return this->operand_->eval(trans_ids);
 	}
 	void backward(const Exp<Dtype>& grad) const {
-		MatrixTransposeExp<Dtype> trans_grad(&grad);
+		MatrixTransposeExp<Dtype> trans_grad(grad);
 		ConstExptr<Dtype>::make_uncontrol(trans_grad);
 		this->operand_.backward(trans_grad);
 	}
@@ -54,7 +54,7 @@ struct SubExp: public BinaryExp<Dtype> {
 	void backward(const Exp<Dtype>& grad) const {
 		this->loperand_.backward(grad);
 
-		MinusExp<Dtype> minus_grad(&grad);
+		MinusExp<Dtype> minus_grad(grad);
 		ConstExptr<Dtype>::make_uncontrol(minus_grad);
 		this->roperand_.backward(minus_grad);
 	}
@@ -66,10 +66,10 @@ struct MulExp: public BinaryExp<Dtype> {
 	MulExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand){}
 	Dtype eval(index_t* ids) const {return this->loperand_->eval(ids) * this->roperand_->eval(ids);}
 	void backward(const Exp<Dtype>& grad) const {
-		MulExp<Dtype> lgrad(&grad, this->roperand_.get());
+		MulExp<Dtype> lgrad(grad, *this->roperand_);
 		ConstExptr<Dtype>::make_uncontrol(lgrad);
 		this->loperand_.backward(lgrad);
-		MulExp<Dtype> rgrad(&grad, this->loperand_.get());
+		MulExp<Dtype> rgrad(grad, *this->loperand_);
 		ConstExptr<Dtype>::make_uncontrol(rgrad);
 		this->roperand_.backward(rgrad);
 	}

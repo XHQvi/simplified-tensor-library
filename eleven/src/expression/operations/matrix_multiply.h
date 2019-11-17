@@ -25,14 +25,14 @@ struct MMExp: public BinaryExp<Dtype> {
 		return value;
 	}
 	void backward(const Exp<Dtype>& grad) const {
-		MatrixTransposeExp<Dtype> rtranspose(this->roperand_.get());
-		MMExp<Dtype> lgrad(&grad, &rtranspose);
+		MatrixTransposeExp<Dtype> rtranspose(*this->roperand_);
+		MMExp<Dtype> lgrad(grad, rtranspose);
 		ConstExptr<Dtype>::make_uncontrol(rtranspose);
 		ConstExptr<Dtype>::make_uncontrol(lgrad);
 		this->loperand_.backward(lgrad);
 
-		MatrixTransposeExp<Dtype> ltranspose(this->loperand_.get());
-		MMExp<Dtype> rgrad(&ltranspose, &grad);
+		MatrixTransposeExp<Dtype> ltranspose(*this->loperand_);
+		MMExp<Dtype> rgrad(ltranspose, grad);
 		ConstExptr<Dtype>::make_uncontrol(ltranspose);
 		ConstExptr<Dtype>::make_uncontrol(rgrad);
 		this->roperand_.backward(rgrad);
@@ -63,7 +63,7 @@ struct BMMExp: public BinaryExp<Dtype> {
 		return value;
 	}
 	struct BMTExp: public UnaryExp<Dtype> {
-		BMTExp(const Exp<Dtype>* operand): UnaryExp<Dtype>(operand) {}
+		BMTExp(const Exp<Dtype>& operand): UnaryExp<Dtype>(operand) {}
 		index_t dim(void) const {return 3;}
 		index_t size(index_t idx) const {
 			switch(idx) {
@@ -81,14 +81,14 @@ struct BMMExp: public BinaryExp<Dtype> {
 		}
 	};
 	void backward(const Exp<Dtype>& grad) const {
-		BMTExp rbmt(this->roperand_.get());
-		BMMExp<Dtype> lgrad(&grad, &rbmt);
+		BMTExp rbmt(*this->roperand_);
+		BMMExp<Dtype> lgrad(grad, rbmt);
 		ConstExptr<Dtype>::make_uncontrol(rbmt);
 		ConstExptr<Dtype>::make_uncontrol(lgrad);
 		this->loperand_.backward(lgrad);
 
-		BMTExp lbmt(this->loperand_.get());
-		BMMExp<Dtype> rgrad(&lbmt, &grad);
+		BMTExp lbmt(*this->loperand_);
+		BMMExp<Dtype> rgrad(lbmt, grad);
 		ConstExptr<Dtype>::make_uncontrol(lbmt);
 		ConstExptr<Dtype>::make_uncontrol(rgrad);
 		this->roperand_.backward(rgrad);

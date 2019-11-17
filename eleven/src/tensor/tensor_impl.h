@@ -20,34 +20,56 @@ public:
     explicit Tensor(const Shape& shape, bool requires_grad=false);
     Tensor(const Tensor& other) = default;
 
-    // method
+
     index_t dim(void) const;
     index_t size(index_t idx) const;
     index_t offset(void) const;
     const Shape& size(void) const;
     const IndexArray& stride(void) const;
     index_t version(void) const;
+    bool requires_grad(void) const;
+
+    // operator[] can modify data of a tensor, and by the same time will increment version of the tensor.
+    // Like in-place operation to a tensor in Pytorch, this operation may damage the computation graph,
+    // which means aee
     Dtype& operator[](std::initializer_list<index_t> ids);
     const Dtype& operator[](std::initializer_list<index_t> ids) const;
+    
+    // Methods with a underscore as suffix will return a pointer which points to a tensor dynamically allocated.
+    // The other ones will return a tensor object on stack storage. 
+    // But all tensors, whether are static allocated or dynamic allocated, share the same storage space with 
+    // the original tensor.
     Tensor slice(index_t idx, index_t dim=0) const;
     Tensor slice(index_t start_idx, index_t end_idx, index_t dim) const;
     Tensor transpose(index_t dim1, index_t dim2) const;
     Tensor view(const Shape& shape) const;
-    // A method with a underscore as suffix will return a ConstExptr which points to a tensor dynamically allocated.
+    Tensor squeeze(void) const;
+    Tensor unsqueeze(index_t dim) const;
     Tensor* slice_(index_t idx, index_t dim=0) const;
     Tensor* slice_(index_t start_idx, index_t end_idx, index_t dim) const;
     Tensor* transpose_(index_t dim1, index_t dim2) const;
     Tensor* view_(const Shape& shape) const;
+    Tensor* squeeze_(void) const;
+    Tensor* unsqueeze_(index_t dim) const;
     bool is_contiguous(void) const;
+
+    // Assigning a tensor to Exp or Tensor, won't add the tensor to any computation graphs, but to a node will.
     Tensor& operator=(const Exp<Dtype>& src);
     Tensor& operator=(const Tensor& src);
     Tensor& operator=(const Node<Dtype>& src);
     Tensor& operator+=(const Exp<Dtype>& src);
     void backward(const Exp<Dtype>& grad) const;
     const Tensor& grad(void) const;
-    // friend
+    // These functions can access and modify data bypassing inspections, and they won't increment the version 
+    // of this tensor. So using these function to a tensor in a computation graph may cause concealed gradient 
+    // calculation error.
+    Dtype eval(index_t* ids) const;
+    Dtype& eval(index_t* ids);
+    Dtype eval(index_t idx) const;
+    Dtype& eval(index_t idx);
+
+
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dtype1>& t);
-    // friend Exp<Dtype>;
 private:
     Storage<Dtype> storage_;
     Shape shape_;
@@ -71,8 +93,6 @@ private:
     Tensor(const Storage<Dtype>& storage, const Shape& shape, const IndexArray& stride, bool requires_grad=false);
     // methods
     void set_self(const Exp<Dtype>& src);
-    Dtype eval(index_t* ids) const;
-    Dtype& eval(index_t* ids);
 };
 
 // ******************** constructors and methods of AutoGradMeta ********************
@@ -92,7 +112,7 @@ Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Storage<Dtype>& storage, const S
 
 template<typename Dtype>
 Tensor<Dtype>::AutoGradMeta::AutoGradMeta(const Shape& shape)
-    : grad_(Storage<Dtype>(shape.dsize(), 0), shape, false), next_exp_(nullptr, true), from_view_(false) {
+    : grad_(Storage<Dtype>(shape.dsize(), 0), shape, false), next_exp_(), from_view_(false) {
     ConstExptr<Dtype>::make_uncontrol(grad_);
 }
 
@@ -148,6 +168,9 @@ inline const IndexArray& Tensor<Dtype>::stride(void) const {return stride_;}
 template<typename Dtype>
 inline index_t Tensor<Dtype>::version(void) const {return storage_.version();}
 
+template<typename Dtype>
+inline bool Tensor<Dtype>::requires_grad(void) const {return requires_grad_;}
+
 // This function will change the content of tensor, so version of the storage will be add 1.
 // If the tensor has been in a computation graph, an exception would be throwed when gradient backwards.
 template<typename Dtype>
@@ -178,7 +201,6 @@ const Dtype& Tensor<Dtype>::operator[](std::initializer_list<index_t> ids) const
     }
     return storage_[offset]; 
 }
-
 
 // Function slice(), transpose() and view() will return new tensor which shares one storage with 
 // the origin tensor. Correspondingly, their grad should also share one storage. And their grad's
@@ -279,6 +301,35 @@ inline Tensor<Dtype> Tensor<Dtype>::view(const Shape& shape) const {
 }
 
 template<typename Dtype>
+inline Tensor<Dtype> Tensor<Dtype>::squeeze(void) const {
+    index_t count = 0;
+    index_t *dims = new int[shape_.dim()];
+
+    for(index_t i = 0; i < shape_.dim(); i++)
+        if(shape_[i] != 1)
+            dims[count++] = shape_[i];
+    Shape squeeze_shape(dims, count);
+    delete [] dims;
+    return view(squeeze_shape);
+}
+
+template<typename Dtype>
+inline Tensor<Dtype> Tensor<Dtype>::unsqueeze(index_t dim) const {
+    CHECK_BETWEEN(dim, 0, shape_.dim() + 1, IndexOutOfRange,
+        "%dD Tensor can be unsqueezed on [0, %d] dimensions, but got dimension %d.", 
+        shape_.dim(), shape_.dim(), dim);
+
+    Shape unsqueeze_shape(nullptr, shape_.dim() + 1);
+    index_t i = 0;
+    for(; i != dim; i++)
+        unsqueeze_shape[i] = shape_[i];
+    unsqueeze_shape[dim] = 1;
+    for(i++; i < unsqueeze_shape.dim(); i++)
+        unsqueeze_shape[i] = shape_[i-1];
+    return view(unsqueeze_shape);
+}
+
+template<typename Dtype>
 Tensor<Dtype>* Tensor<Dtype>::slice_(index_t idx, index_t dim) const {
     CHECK_BETWEEN(dim, 0, shape_.dim(), IndexOutOfRange,
         "%dD tensor got index on th%d dimension", shape_.dim(), idx);
@@ -367,9 +418,38 @@ inline Tensor<Dtype>* Tensor<Dtype>::view_(const Shape& shape) const {
 }
 
 template<typename Dtype>
+inline Tensor<Dtype>* Tensor<Dtype>::squeeze_(void) const {
+    index_t count = 0;
+    index_t *dims = new int[shape_.dim()];
+
+    for(index_t i = 0; i < shape_.dim(); i++)
+        if(shape_[i] != 1)
+            dims[count++] = shape_[i];
+    Shape squeeze_shape(dims, count);
+    delete [] dims;
+    return view_(squeeze_shape);
+}
+
+template<typename Dtype>
+inline Tensor<Dtype>* Tensor<Dtype>::unsqueeze_(index_t dim) const {
+    CHECK_BETWEEN(dim, 0, shape_.dim() + 1, IndexOutOfRange,
+        "%dD Tensor can be unsqueezed on [0, %d] dimensions, but got dimension %d.", 
+        shape_.dim(), shape_.dim(), dim);
+
+    Shape unsqueeze_shape(nullptr, shape_.dim() + 1);
+    index_t i = 0;
+    for(; i != dim; i++)
+        unsqueeze_shape[i] = shape_[i];
+    unsqueeze_shape[dim] = 1;
+    for(i++; i < unsqueeze_shape.dim(); i++)
+        unsqueeze_shape[i] = shape_[i-1];
+    return view_(unsqueeze_shape);
+}
+
+template<typename Dtype>
 bool Tensor<Dtype>::is_contiguous(void) const {
-    for(index_t i = 1; i <= shape_.dim(); i++)
-        if(stride_[i-1] != shape_.subsize(i))
+    for(index_t i = 0; i < shape_.dim(); i++)
+        if(stride_[i] != 0 && stride_[i] != shape_.subsize(i+1))
             return false;
     return true;
 }
@@ -391,6 +471,12 @@ Dtype& Tensor<Dtype>::eval(index_t* ids) {
         offset += stride_[i] * ids[i];
     return storage_[offset];
 }
+
+template<typename Dtype>
+Dtype Tensor<Dtype>::eval(index_t idx) const {return storage_[idx];}
+
+template<typename Dtype>
+Dtype& Tensor<Dtype>::eval(index_t idx) {return storage_[idx];}
 
 // This function was written in a recursive form originally, then was converted to a while loop form.
 // The while loop will iterate all possible indice for this tensor, so we can calculate and set each
@@ -485,14 +571,15 @@ inline Tensor<Dtype>& Tensor<Dtype>::operator+=(const Exp<Dtype>& src) {
 
 template<typename Dtype>
 inline void Tensor<Dtype>::backward(const Exp<Dtype>& grad) const {
-    if(!requires_grad_) return;
+    CHECK_TRUE(requires_grad_, TensorNoGrad,
+        "Call backward for a tensor with requires_grad false");
 
     ag_meta_->grad_ += grad;
     if(ag_meta_->next_exp_ && ConstExptr<Dtype>::grad_ready(*this)) {
         if(ag_meta_->from_view_) {
             index_t dsize = ag_meta_->next_exp_->dim();
             Storage<Dtype> storage(dsize, 0);
-            Tensor<Dtype> view_grad(storage, Shape(1, dsize), false);
+            Tensor<Dtype> view_grad(storage, Shape(nullptr, dsize), false);
             ConstExptr<Dtype>::make_uncontrol(view_grad);
             ag_meta_->next_exp_.backward(view_grad);
         } else {

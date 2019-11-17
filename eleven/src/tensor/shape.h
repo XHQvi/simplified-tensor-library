@@ -15,7 +15,7 @@ public:
     Shape(std::initializer_list<index_t> dims);
     Shape(const Shape& other) = default;
     Shape(const Shape& other, index_t skip);
-    Shape(index_t value, index_t dim);
+    Shape(index_t* dims, index_t dim);
     template<typename Dtype> Shape(const Exp<Dtype>& exp);
 
     // method
