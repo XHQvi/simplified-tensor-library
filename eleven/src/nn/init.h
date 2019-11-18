@@ -1,11 +1,7 @@
 #ifndef NN_INIT_H_
 #define NN_INIT_H_
 
-#include <map>
-#include <string>
-#include "../tensor/tensor.h"
-#include "../expression/op.h"
-#include "module.h"
+#include "nn.h"
 
 
 namespace el {

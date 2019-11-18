@@ -1,12 +1,12 @@
 #ifndef NN_LINEAR_H_
 #define NN_LINEAR_H_
 
-#include "module.h"
+#include "nn.h"
 
 namespace el {
 namespace nn {
 
-class Linear: public Module {
+class Linear {
 public:
 	Node<float_t> weight_;
 	Node<float_t> bias_;

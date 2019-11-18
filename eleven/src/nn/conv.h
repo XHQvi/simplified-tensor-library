@@ -1,12 +1,12 @@
 #ifndef NN_CONV_H_
 #define NN_CONV_H_
 
-#include "module.h"
+#include "nn.h"
 
 namespace el {
 namespace nn {
 
-class Conv2d: public Module {
+class Conv2d {
 public:
     Node<float_t> weight_;
     Node<float_t> bias_;

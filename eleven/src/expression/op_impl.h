@@ -178,13 +178,13 @@ template<typename Dtype> Node<Dtype> nll_loss(const Node<Dtype>& src, const Node
 }
 
 template<typename Dtype> LogSoftmaxExp<Dtype> log_softmax(const Exp<Dtype>& src) {
-	CHECK_EQUAL(src.dim(), 1, OperandSizeNotMatch,
+	CHECK_EQUAL(src.dim(), 2, OperandSizeNotMatch,
 		"log_softmax is only implemented for 1D tensor, but got %dD tensor.", src.dim());
 	return LogSoftmaxExp<Dtype>(src);
 }
 template<typename Dtype> Node<Dtype> log_softmax(const Node<Dtype>& src) {
-	CHECK_EQUAL(src.dim(), 1, OperandSizeNotMatch,
-		"log_softmax is only implemented for 1D tensor, but got %dD tensor.", src.dim());
+	CHECK_EQUAL(src.dim(), 2, OperandSizeNotMatch,
+		"log_softmax is only implemented for tensor with shape (batch_size, num_cls), but got %dD tensor.", src.dim());
 	return Node<Dtype>(new LogSoftmaxExp<Dtype>(src.get_exp_ptr()));	
 }
 

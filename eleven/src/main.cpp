@@ -1,9 +1,7 @@
 #include <iostream>
 #include "tensor/tensor.h"
 #include "expression/op.h"
-#include "nn/conv.h"
-#include "nn/init.h"
-#include "nn/linear.h"
+#include "nn/nn.h"
 
 using std::cout;
 using std::endl;
@@ -41,15 +39,20 @@ int main()
 	// nn::init::constant_init(conv.parameters(), 1);
 	// nn::init::constant_init(linear.parameters(), 1);
 
-	double data[5] = {0, 1, 2, 3, 4};
-	Tensor<double> origin(data, {5}, true);
-	auto log_softmax_ret = op::log_softmax(op::node(origin));
+	double data[30];
+	for(index_t i = 0; i < 30; i ++) 
+		data[i] = (double)i*i/50.;
+	int ldata[3] = {4, 9, 0};
+	Tensor<double> prob(data, {3, 10}, true);
+	Tensor<int> labels(ldata, {3}, false);
+	print10(prob);
 
-	Tensor<double> result(Shape(log_softmax_ret.get_exp()), true);
-	result = log_softmax_ret;
-	print10(result);
+	nn::CrossEntropy criterion;
+	auto loss = criterion.forward(op::node(prob), op::node(labels));
 
-	op::node(result).backward();
-	print10(origin.grad());
+	print10(loss.get_tensor());
+	loss.backward();
+	print10(prob.grad());
+
 	return 0;
 }
