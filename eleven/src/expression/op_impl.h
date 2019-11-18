@@ -162,14 +162,14 @@ inline Node<Dtype> bmm(const Node<Dtype>& loperand, const Node<Dtype>& roperand)
 	return Node<Dtype>(new BMMExp<Dtype>(loperand.get_exp_ptr(), roperand.get_exp_ptr()));
 }
 
-template<typename Dtype> NLLLossExp<Dtype> batch_index(const Exp<Dtype>& src, const Exp<int_t>& index) {
+template<typename Dtype> NLLLossExp<Dtype> nll_loss(const Exp<Dtype>& src, const Exp<int_t>& index) {
 	CHECK_EQUAL(src.dim(), 2, OperandSizeNotMatch,
 		"BatchIndex is only used on 2D tensor as src, but got %dD tensor", src.dim());
 	CHECK_EQUAL(index.dim(), 1, OperandSizeNotMatch,
 		"BatchIndex is only used on 1D tensor as index, but got %dD tensor", index.dim());
 	return NLLLossExp<Dtype>(src, index);
 }
-template<typename Dtype> Node<Dtype> batch_index(const Node<Dtype>& src, const Node<int_t>& index) {
+template<typename Dtype> Node<Dtype> nll_loss(const Node<Dtype>& src, const Node<int_t>& index) {
 	CHECK_EQUAL(src.dim(), 2, OperandSizeNotMatch,
 		"BatchIndex is only used on 2D tensor as src, but got %dD tensor", src.dim());
 	CHECK_EQUAL(index.dim(), 1, OperandSizeNotMatch,

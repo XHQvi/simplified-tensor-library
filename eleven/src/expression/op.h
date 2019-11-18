@@ -61,8 +61,8 @@ template<typename Dtype> Node<Dtype> mm(const Node<Dtype>& loperand, const Node<
 template<typename Dtype> BMMExp<Dtype> bmm(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand);
 template<typename Dtype> Node<Dtype> bmm(const Node<Dtype>& loperand, const Node<Dtype>& roperand);
 
-template<typename Dtype> NLLLossExp<Dtype> batch_index(const Exp<Dtype>& src, const Exp<int_t>& index);
-template<typename Dtype> Node<Dtype> batch_index(const Node<Dtype>& src, const Node<int_t>& index);
+template<typename Dtype> NLLLossExp<Dtype> nll_loss(const Exp<Dtype>& src, const Exp<int_t>& index);
+template<typename Dtype> Node<Dtype> nll_loss(const Node<Dtype>& src, const Node<int_t>& index);
 
 template<typename Dtype> LogSoftmaxExp<Dtype> log_softmax(const Exp<Dtype>& src);
 template<typename Dtype> Node<Dtype> log_softmax(const Node<Dtype>& src);
