@@ -68,7 +68,6 @@ public:
     Dtype eval(index_t idx) const;
     Dtype& eval(index_t idx);
 
-
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dtype1>& t);
 private:
     Storage<Dtype> storage_;

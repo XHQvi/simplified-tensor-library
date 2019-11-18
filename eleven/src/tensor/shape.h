@@ -17,6 +17,7 @@ public:
     Shape(const Shape& other, index_t skip);
     Shape(index_t* dims, index_t dim);
     template<typename Dtype> Shape(const Exp<Dtype>& exp);
+    template<typename Dtype> Shape(const Exp<Dtype>& exp, index_t skip);
 
     // method
     index_t dsize() const;
@@ -37,6 +38,17 @@ Shape::Shape(const Exp<Dtype>& exp)
     for(index_t i = 0; i < dims_.size(); i++)
         dims_[i] = exp.size(i);
 }
+
+template<typename Dtype>
+Shape::Shape(const Exp<Dtype>& exp, index_t skip)
+    : dims_(exp.dim() - 1) {
+    index_t i = 0;
+    for(; i < dims_.size() && i != skip; i++)
+        dims_[i] = exp.size(i);
+    for(; i < dims_.size(); i++)
+        dims_[i] = exp.size(i+1);
+}
+
 
 }  // namespace el
 #endif // TENSOR_SHAPE_H_

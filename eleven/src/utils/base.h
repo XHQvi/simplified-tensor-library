@@ -8,12 +8,11 @@ namespace el {
 
 using index_t = int;
 #define INDEX_MAX INT_MAX
+using IndexArray = FixedSizeArray<index_t>;
 
 using float_t = double;
 using int_t = int;
 #define TENSOR_DEFAULT_TYPE float_t
-
-using IndexArray = FixedSizeArray<index_t>;
 
 } // namespace el
 

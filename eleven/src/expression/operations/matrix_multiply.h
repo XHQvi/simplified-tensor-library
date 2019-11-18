@@ -2,7 +2,7 @@
 #define EXPRESSION_OPERATIONS_MATRIX_MULTIPLY_H_
 
 #include "base_ops.h"
-#include "../expression.h"
+
 
 namespace el {
 namespace op {
