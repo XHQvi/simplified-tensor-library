@@ -21,5 +21,6 @@ class CrossEntrpy;
 #include "conv.h"
 #include "linear.h"
 #include "cross_entropy.h"
+#include "max_pooling.h"
 
 #endif

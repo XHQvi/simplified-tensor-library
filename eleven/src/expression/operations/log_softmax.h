@@ -119,7 +119,6 @@ inline Dtype LogSoftmaxExp<Dtype>::GradExp::eval(index_t* ids) const {
 	Dtype total_grad = 0;
 	Dtype softmax = std::exp(this->loperand_->eval(ids) - max_item_.get()[ids[0]]) / exp_sum_.get()[ids[0]];
 
-	std::cout << "calculate for " << ids[0] << " " << ids[1] << " " << softmax << std::endl;
 	for(index_t i = 0; i < num_cls; i++) {
 		grad_ids[1] = i;
 		if(ids[1] != i) {
@@ -127,9 +126,7 @@ inline Dtype LogSoftmaxExp<Dtype>::GradExp::eval(index_t* ids) const {
 		} else { 
 			total_grad += (1-softmax) * this->roperand_->eval(grad_ids);
 		}
-		std::cout << this->roperand_->eval(grad_ids) << " ";
 	}
-	std::cout << std::endl;
 	return total_grad;
 }
 

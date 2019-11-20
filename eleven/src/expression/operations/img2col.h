@@ -13,9 +13,9 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 	std::pair<index_t, index_t> padding_;
 	std::pair<index_t, index_t> out_size_;  // feature map's size after conv
 	explicit Img2ColExp(const Exp<Dtype>& operand, 
-						const std::pair<index_t, index_t> kernel_size, 
-					    const std::pair<index_t, index_t> stride, 
-					    const std::pair<index_t, index_t> padding)
+						const std::pair<index_t, index_t>& kernel_size, 
+					    const std::pair<index_t, index_t>& stride, 
+					    const std::pair<index_t, index_t>& padding)
 		: UnaryExp<Dtype>(operand), kernel_size_(kernel_size), stride_(stride), padding_(padding) {
 		out_size_.first = 
 			(this->operand_->size(2) + 2 * padding_.first - kernel_size_.first) / stride_.first + 1;
@@ -23,9 +23,9 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 			(this->operand_->size(3) + 2 * padding_.second - kernel_size_.second) / stride_.second + 1;
 	}
 	explicit Img2ColExp(const Exp<Dtype>* operand, 
-						const std::pair<index_t, index_t> kernel_size, 
-					    const std::pair<index_t, index_t> stride, 
-					    const std::pair<index_t, index_t> padding)
+						const std::pair<index_t, index_t>& kernel_size, 
+					    const std::pair<index_t, index_t>& stride, 
+					    const std::pair<index_t, index_t>& padding)
 		: UnaryExp<Dtype>(operand), kernel_size_(kernel_size), stride_(stride), padding_(padding) {
 		out_size_.first = 
 			(this->operand_->size(2) + 2 * padding_.first - kernel_size_.first) / stride_.first + 1;
@@ -36,10 +36,13 @@ struct Img2ColExp: public UnaryExp<Dtype> {
 	index_t dim(void) const {return 3;}
 	index_t out_size(index_t idx) const {return idx == 0 ? out_size_.first : out_size_.second;}
 
-	// A batch of images, whose size is (b, c, h, w), will be unpack into b matrixes with size of (c*kh*kw, oh*ow),
+	// A batch of images, whose size is (b, c, h, w), will be packed into b matrixes with size of (c*kh*kw, oh*ow),
 	// where {kh, kw}, {oh, ow} is kernel size and size of feature map after conv.
 	// Then unpack the weight into a matrix with (oc, c*kh*kw), where oc is conv's output channels.
-	// Just dot(weight_mat, image_mat) and get the result of conv.
+	// Just bmm(weight_mats, image_mats) and get the result of conv.
+	//
+	// It seems that usual implement is packing the images into a matrix (c*kh*kw, oh*ow*b). So to get the result of 
+	// convolution, just use mm(weight_mat, image_mat) instead of bmm.
 	index_t size(index_t idx) const {
 		switch(idx) {
 			case 0: return this->operand_->size(0);  // batch size

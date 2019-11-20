@@ -62,7 +62,7 @@ inline Img2ColExp<Dtype> img2col(const Exp<Dtype>& operand,
 	CHECK_EQUAL(operand.dim(), 4, DimNotMatch,
 		"Img2ColExp expect 4D tensor:(b, c, h, w), but got %dD tensor", operand.dim());
 	Img2ColExp<Dtype> ret (operand, kernel_size, stride, padding);
-	CHECK_TRUE(ret.out_size(0) > 0, OperandSizeNotMatch,
+	CHECK_TRUE(ret->out_size(0) > 0 && ret->out_size(1), OperandSizeNotMatch,
 		"Can't convolve on image(%d, %d) because of too big kernel size(%d, %d) or stride(%d, %d)", 
 		operand.size(2), operand.size(3),
 		kernel_size.first, kernel_size.second,
@@ -77,7 +77,7 @@ inline Node<Dtype> img2col(const Node<Dtype>& operand,
 	CHECK_EQUAL(operand.dim(), 4, DimNotMatch,
 		"Img2ColExp expect 4D tensor:(b, c, h, w), but got %dD tensor", operand.dim());
 	Img2ColExp<Dtype>* ret = new Img2ColExp<Dtype>(operand.get_exp_ptr(), kernel_size, stride, padding);
-	CHECK_TRUE(ret->out_size(0) > 0, OperandSizeNotMatch,
+	CHECK_TRUE(ret->out_size(0) > 0 && ret->out_size(1), OperandSizeNotMatch,
 		"Can't convolve on image(%d, %d) because of too big kernel size(%d, %d) or stride(%d, %d)", 
 		operand.size(2), operand.size(3),
 		kernel_size.first, kernel_size.second,
@@ -187,6 +187,45 @@ template<typename Dtype> Node<Dtype> log_softmax(const Node<Dtype>& src) {
 		"log_softmax is only implemented for tensor with shape (batch_size, num_cls), but got %dD tensor.", src.dim());
 	return Node<Dtype>(new LogSoftmaxExp<Dtype>(src.get_exp_ptr()));	
 }
+
+template<typename Dtype> 
+MaxPool2DExp<Dtype> maxpooling2d(const Exp<Dtype>& operand, 
+     							 const std::pair<index_t, index_t>& kernel_size) {
+	CHECK_EQUAL(operand.dim(), 4, DimNotMatch,
+		"MaxPooling expect 4D tensor:(b, c, h, w), but got %dD tensor", operand.dim());
+	MaxPool2DExp<Dtype> ret(operand, kernel_size);
+	CHECK_TRUE(ret.size(0) > 0 && ret.size(1) > 0, OperandSizeNotMatch,
+		"Can't max pool on image(%d, %d) because of too big kernel size(%d, %d)", 
+		operand.size(2), operand.size(3),
+		kernel_size.first, kernel_size.second);
+	return ret;
+}
+template<typename Dtype> 
+Node<Dtype> maxpooling2d(const Node<Dtype>& operand, 
+     					 const std::pair<index_t, index_t>& kernel_size) {
+	CHECK_EQUAL(operand.dim(), 4, DimNotMatch,
+		"MaxPooling expect 4D tensor:(b, c, h, w), but got %dD tensor", operand.dim());
+	MaxPool2DExp<Dtype>* ret = new MaxPool2DExp<Dtype>(operand.get_exp_ptr(), kernel_size);
+	CHECK_TRUE(ret->size(0) > 0 && ret->size(1) > 0, OperandSizeNotMatch,
+		"Can't max pool on image(%d, %d) because of too big kernel size(%d, %d)", 
+		operand.size(2), operand.size(3),
+		kernel_size.first, kernel_size.second);
+	return Node<Dtype>(ret);
+}
+
+template<typename Dtype>
+MeanReduceExp<Dtype> mean(const Exp<Dtype>& operand, index_t dim) {
+	CHECK_BETWEEN(dim, 0, operand.dim(), IndexOutOfRange,
+		"SumReduce is called on a %dD tensor, but got dim = %d", operand.dim(), dim);
+	return MeanReduceExp<Dtype>(operand, dim);
+}
+template<typename Dtype>
+Node<Dtype> mean(const Node<Dtype>& operand, index_t dim) {
+	CHECK_BETWEEN(dim, 0, operand.dim(), IndexOutOfRange,
+		"SumReduce is called on a %dD tensor, but got dim = %d", operand.dim(), dim);
+	return Node<Dtype>(new MeanReduceExp<Dtype>(operand.get_exp_ptr(), dim));
+}
+
 
 }  // namespace op
 }  // namespace el

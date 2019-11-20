@@ -34,7 +34,8 @@ public:
     // which means aee
     Dtype& operator[](std::initializer_list<index_t> ids);
     const Dtype& operator[](std::initializer_list<index_t> ids) const;
-    
+    Dtype item(void) const;
+
     // Methods with a underscore as suffix will return a pointer which points to a tensor dynamically allocated.
     // The other ones will return a tensor object on stack storage. 
     // But all tensors, whether are static allocated or dynamic allocated, share the same storage space with 
@@ -169,6 +170,13 @@ inline index_t Tensor<Dtype>::version(void) const {return storage_.version();}
 
 template<typename Dtype>
 inline bool Tensor<Dtype>::requires_grad(void) const {return requires_grad_;}
+
+template<typename Dtype>
+inline Dtype Tensor<Dtype>::item(void) const {
+    CHECK_TRUE(shape_.dim() == 1 && shape_[0] == 1, DsizeNotMatch,
+        "Can't call item() on a tenor that isn't a scalar.");
+    return storage_[0];
+}
 
 // This function will change the content of tensor, so version of the storage will be add 1.
 // If the tensor has been in a computation graph, an exception would be throwed when gradient backwards.

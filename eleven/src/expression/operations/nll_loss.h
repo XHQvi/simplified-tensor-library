@@ -17,6 +17,9 @@ struct NLLLossExp: public Exp<Dtype> {
 	Dtype eval(index_t* ids) const;
 	void backward(const Exp<Dtype>& grad) const;
 private:
+	ConstExptr<Dtype> src_;
+	ConstExptr<int_t> index_;
+	
 	struct GradExp: public Exp<Dtype> {
 	public:	
 		GradExp(const Exp<Dtype>& grad, const Exp<Dtype>& src, const Exp<int_t>& index);
@@ -30,9 +33,6 @@ private:
 		ConstExptr<Dtype> src_;
 		ConstExptr<int_t> index_;
 	};
-
-	ConstExptr<Dtype> src_;
-	ConstExptr<int_t> index_;
 };
 
 template<typename Dtype>

@@ -12,6 +12,8 @@
 #include "operations/relu.h"
 #include "operations/nll_loss.h"
 #include "operations/log_softmax.h"
+#include "operations/max_pooling.h"
+#include "operations/mean_reduce.h"
 #include "op_impl.h"
 
 namespace el {
@@ -66,6 +68,12 @@ template<typename Dtype> Node<Dtype> nll_loss(const Node<Dtype>& src, const Node
 
 template<typename Dtype> LogSoftmaxExp<Dtype> log_softmax(const Exp<Dtype>& src);
 template<typename Dtype> Node<Dtype> log_softmax(const Node<Dtype>& src);
+
+template<typename Dtype> MaxPool2DExp<Dtype> maxpooling2d(const Exp<Dtype>& operand, const std::pair<index_t, index_t>& kernel_size);
+template<typename Dtype> Node<Dtype> maxpooling2d(const Node<Dtype>& operand, const std::pair<index_t, index_t>& kernel_size);
+
+template<typename Dtype> MeanReduceExp<Dtype> mean(const Exp<Dtype>& operand, index_t dim);
+template<typename Dtype> Node<Dtype> mean(const Node<Dtype>& operand, index_t dim);
 
 }  // namespace op
 }  // namespace el
