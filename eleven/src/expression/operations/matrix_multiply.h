@@ -41,8 +41,10 @@ struct MMExp: public BinaryExp<Dtype> {
 
 template<typename Dtype>
 struct BMMExp: public BinaryExp<Dtype> {
-	BMMExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand): BinaryExp<Dtype>(loperand, roperand){}
-	BMMExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand): BinaryExp<Dtype>(loperand, roperand){}
+	BMMExp(const Exp<Dtype>& loperand, const Exp<Dtype>& roperand)
+		: BinaryExp<Dtype>(loperand, roperand) {}
+	BMMExp(const Exp<Dtype>* loperand, const Exp<Dtype>* roperand)
+		: BinaryExp<Dtype>(loperand, roperand) {}
 	index_t dim(void) const {return 3;}
 	index_t size(index_t idx) const {
 		switch(idx) {

@@ -9,7 +9,7 @@ namespace init {
 
 void uniform_init(Node<float_t>& param) {
 	static std::default_random_engine e(std::time(0));
-	static std::uniform_real_distribution<float_t> u(0, 1);
+	static std::uniform_real_distribution<float_t> u(-0.1, 0.1);
 
 	Tensor<float_t>& tensor = const_cast<Tensor<float_t>&>(param.get_tensor());
 	index_t dsize = tensor.size().dsize();

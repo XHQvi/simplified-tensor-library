@@ -8,6 +8,7 @@ namespace nn {
 
 class MaxPool2D {
 public:
+	MaxPool2D(index_t kernel_size);
 	MaxPool2D(const std::pair<index_t, index_t>& kernel_size);
 	Node<float_t> forward(const Node<float_t>& inputs);
 private:

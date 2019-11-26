@@ -25,7 +25,7 @@ public:
 	template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const FixedSizeArray<Dtype1>& fsarr);
 private:
 	const size_t size_;
-	std::unique_ptr<Dtype> dptr_;
+	std::unique_ptr<Dtype[]> dptr_;
 };
 
 template<typename Dtype>

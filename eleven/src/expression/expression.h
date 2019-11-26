@@ -88,11 +88,11 @@ protected:
 template<typename Dtype>
 struct ConstantExp: public Exp<Dtype> {
 	explicit ConstantExp(Dtype value, index_t dim): value_(value), dim_(dim) {}
-	Dtype eval(index_t* ids) {return value_;}
+	Dtype eval(index_t* ids) const {return value_;}
 	index_t dim(void) const {return dim_;}
 	index_t size(index_t idx) const {return 1;}
 	bool requires_grad(void) const {return false;}
-	void backward(const Exp<Dtype>& grad) {
+	void backward(const Exp<Dtype>& grad) const {
 		THROW_ERROR(NotImplementError, "Can't call backward for a constant.");
 	}
 private:

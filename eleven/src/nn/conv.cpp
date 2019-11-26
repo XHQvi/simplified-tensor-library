@@ -39,10 +39,10 @@ Node<float_t> Conv2d::forward(const Node<float_t>& imgs) {
         result->view_({imgs.size(0), out_features_, col_exp.out_size(0), col_exp.out_size(1)}));
 }
 
-const NamedParamMap Conv2d::parameters(void) {
-    return std::map<std::string, Node<float_t>&>{
-                {"weight", weight_}, 
-                {"bias", bias_}};
+NamedParamMap Conv2d::parameters(const std::string& name) {
+    return NamedParamMap{
+                {name + "_weight", weight_}, 
+                {name + "_bias", bias_}};
 }
 
 } // namespace nn

@@ -14,6 +14,7 @@
 #include "operations/log_softmax.h"
 #include "operations/max_pooling.h"
 #include "operations/mean_reduce.h"
+#include "operations/argmax.h"
 #include "op_impl.h"
 
 namespace el {
@@ -74,6 +75,9 @@ template<typename Dtype> Node<Dtype> maxpooling2d(const Node<Dtype>& operand, co
 
 template<typename Dtype> MeanReduceExp<Dtype> mean(const Exp<Dtype>& operand, index_t dim);
 template<typename Dtype> Node<Dtype> mean(const Node<Dtype>& operand, index_t dim);
+
+template<typename Dtype> ArgmaxExp<Dtype> argmax(const Exp<Dtype>& operand, index_t dim);
+template<typename Dtype> Node<Dtype> argmax(const Node<Dtype>& operand, index_t dim);
 
 }  // namespace op
 }  // namespace el

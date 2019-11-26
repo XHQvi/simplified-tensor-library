@@ -226,6 +226,19 @@ Node<Dtype> mean(const Node<Dtype>& operand, index_t dim) {
 	return Node<Dtype>(new MeanReduceExp<Dtype>(operand.get_exp_ptr(), dim));
 }
 
+template<typename Dtype>
+ArgmaxExp<Dtype> argmax(const Exp<Dtype>& operand, index_t dim) {
+	CHECK_BETWEEN(dim, 0, operand.dim(), IndexOutOfRange,
+		"Argmax is called on a %dD tensor, but got dim = %d", operand.dim(), dim);
+	return ArgmaxExp<Dtype>(operand, dim);
+}
+template<typename Dtype>
+Node<Dtype> argmax(const Node<Dtype>& operand, index_t dim) {
+	CHECK_BETWEEN(dim, 0, operand.dim(), IndexOutOfRange,
+		"Argmax is called on a %dD tensor, but got dim = %d", operand.dim(), dim);
+	return Node<Dtype>(new ArgmaxExp<Dtype>(operand.get_exp_ptr(), dim));
+}
+
 
 }  // namespace op
 }  // namespace el

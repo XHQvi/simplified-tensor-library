@@ -36,9 +36,9 @@ private:
 template<typename Dtype>
 LogSoftmaxExp<Dtype>::LogSoftmaxExp(const Exp<Dtype>& operand)
 	: UnaryExp<Dtype>(operand),
-	  exp_sum_(new Dtype[operand.size(0)]{0}),
-	  log_exp_sum_(new Dtype[operand.size(0)]),
-	  max_item_(new Dtype[operand.size(0)]) {
+	  exp_sum_(new Dtype[operand.size(0)]{0}, std::default_delete<Dtype[]>()),
+	  log_exp_sum_(new Dtype[operand.size(0)], std::default_delete<Dtype[]>()),
+	  max_item_(new Dtype[operand.size(0)], std::default_delete<Dtype[]>()) {
 	
 	auto exp_sum_ptr = exp_sum_.get();
 	auto log_exp_sum_ptr = log_exp_sum_.get();
@@ -66,9 +66,9 @@ LogSoftmaxExp<Dtype>::LogSoftmaxExp(const Exp<Dtype>& operand)
 template<typename Dtype>
 LogSoftmaxExp<Dtype>::LogSoftmaxExp(const Exp<Dtype>* operand)
 	: UnaryExp<Dtype>(operand),
-	  exp_sum_(new Dtype[operand->size(0)]{0}),
-	  log_exp_sum_(new Dtype[operand->size(0)]),
-	  max_item_(new Dtype[operand->size(0)]) {
+	  exp_sum_(new Dtype[operand->size(0)]{0}, std::default_delete<Dtype[]>()),
+	  log_exp_sum_(new Dtype[operand->size(0)], std::default_delete<Dtype[]>()),
+	  max_item_(new Dtype[operand->size(0)], std::default_delete<Dtype[]>()) {
 	
 	auto exp_sum_ptr = exp_sum_.get();
 	auto log_exp_sum_ptr = log_exp_sum_.get();

@@ -24,7 +24,7 @@ public:
            index_t padding);
 
     Node<float_t> forward(const Node<float_t>& imgs);
-    const NamedParamMap parameters(void);
+    NamedParamMap parameters(const std::string& name);
 
 private:
     index_t in_features_, out_features_;

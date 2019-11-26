@@ -19,6 +19,7 @@ public:
 	~ConstExptr();
 	// modifiers
 	void reset(const Exp<Dtype>* ptr, bool with_grad);
+	void reset(const Exp<Dtype>* ptr);
 	// observers
 	const Exp<Dtype>* get(void) const;
 	const Exp<Dtype>& operator*(void) const;
@@ -90,6 +91,11 @@ inline void ConstExptr<Dtype>::reset(const Exp<Dtype>* ptr, bool with_grad) {
 	ptr_ = ptr;
 	with_grad_ = with_grad && ptr->requires_grad();
 	increment_counters();
+}
+
+template<typename Dtype>
+inline void ConstExptr<Dtype>::reset(const Exp<Dtype>* ptr) {
+	reset(ptr, with_grad_);
 }
 
 template<typename Dtype>

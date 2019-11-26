@@ -18,10 +18,10 @@ Node<float_t> Linear::forward(const Node<float_t>& input) {
     return Node<float_t>(result->squeeze_());
 }
 
-const NamedParamMap Linear::parameters(void) {
-    return std::map<std::string, Node<float_t>&>{
-                {"weight", weight_}, 
-                {"bias", bias_}};
+NamedParamMap Linear::parameters(const std::string& name) {
+    return NamedParamMap{
+                {name + "_weight", weight_}, 
+                {name + "_bias", bias_}};
 }
 
 }  // namespace nn

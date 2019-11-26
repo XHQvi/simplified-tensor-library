@@ -15,12 +15,13 @@ class Storage {
 public:
     // constructor
     explicit Storage(index_t dsize)
-        : bptr_(new char[dsize * sizeof(Dtype) + sizeof(index_t)]), 
+        : bptr_(new char[dsize * sizeof(Dtype) + sizeof(index_t)](),
+                std::default_delete<char[]>()), 
           dptr_(reinterpret_cast<Dtype*>(bptr_.get() + sizeof(index_t))) {
         init_version();
     }
     Storage(const Storage& other, index_t offset)
-        : bptr_(other.bptr_), 
+        : bptr_(other.bptr_),
           dptr_(other.dptr_ + offset){
         init_version();
     }

@@ -51,6 +51,7 @@ inline void Node<Dtype>::backward(void) const {
 	Tensor<Dtype> init_grad(storage, grad_shape);
 	ConstExptr<Dtype>::make_uncontrol(init_grad);
 	exp_ptr_->backward(init_grad);
+	// get_tensor().ag_meta_->next_exp_.reset(nullptr);
 }
 
 template<typename Dtype>

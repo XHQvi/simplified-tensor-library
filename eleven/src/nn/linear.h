@@ -13,7 +13,7 @@ public:
 
 	Linear(index_t in_features, index_t out_features);
 	Node<float_t> forward(const Node<float_t>& input);
-    const NamedParamMap parameters(void);
+    NamedParamMap parameters(const std::string& name);
 };
 
 }  // namespace nn

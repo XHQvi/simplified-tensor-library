@@ -1,10 +1,14 @@
-#include "max_pooling.h"
+#include "max_pool.h"
 
 namespace el {
 namespace nn {
 
 MaxPool2D::MaxPool2D(const std::pair<index_t, index_t>& kernel_size) 
 	: kernel_size_(kernel_size) {}
+
+MaxPool2D::MaxPool2D(index_t kernel_size) 
+	: kernel_size_({kernel_size, kernel_size}) {}
+
 
 Node<float_t> MaxPool2D::forward(const Node<float_t>& inputs) {
 	auto pooling = op::maxpooling2d(inputs, kernel_size_);

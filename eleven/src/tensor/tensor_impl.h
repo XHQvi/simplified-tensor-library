@@ -59,8 +59,9 @@ public:
     Tensor& operator=(const Tensor& src);
     Tensor& operator=(const Node<Dtype>& src);
     Tensor& operator+=(const Exp<Dtype>& src);
+
     void backward(const Exp<Dtype>& grad) const;
-    const Tensor& grad(void) const;
+    Tensor& grad(void) const;
     // These functions can access and modify data bypassing inspections, and they won't increment the version 
     // of this tensor. So using these function to a tensor in a computation graph may cause concealed gradient 
     // calculation error.
@@ -69,6 +70,7 @@ public:
     Dtype eval(index_t idx) const;
     Dtype& eval(index_t idx);
 
+    template<typename Dtype1> friend class Node;
     template<typename Dtype1> friend std::ostream& operator<<(std::ostream& out, const Tensor<Dtype1>& t);
 private:
     Storage<Dtype> storage_;
@@ -596,7 +598,7 @@ inline void Tensor<Dtype>::backward(const Exp<Dtype>& grad) const {
 }
 
 template<typename Dtype>
-inline const Tensor<Dtype>& Tensor<Dtype>::grad(void) const {
+inline Tensor<Dtype>& Tensor<Dtype>::grad(void) const {
     CHECK_TRUE(requires_grad_, TensorNoGrad,
         "Call grad() on a tensor with requires_grad false.");
     return ag_meta_->grad_;
