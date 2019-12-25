@@ -123,20 +123,22 @@ int main() {
 	auto test_images_ptr = data::read_mnist_images(test_images_path);
 	auto test_labels_ptr = data::read_mnist_labels(test_labels_path);
 	index_t num_train_images = 60000, num_test_images = 10000;
-	index_t batch_size = 32;
+	index_t batch_size = 64;
 	index_t num_pixels = 28 * 28;
 
 	models::TripleLinear net;
 	nn::CrossEntropy criterion;
 	nn::optim::SGD optimizer(net.parameters(), 0.05);
-	nn::init::uniform_init(net.parameters());
 
-	train_one_epoch(net, criterion, optimizer,
-					train_images_ptr, train_labels_ptr,
-					num_train_images, batch_size, 
-					num_pixels);
-
-	validate(net, test_images_ptr, test_labels_ptr,
-			 num_test_images, batch_size, num_pixels);
+	for(index_t epoch = 0; epoch < 1; epoch ++) {
+		cout << "***** epoch " << epoch << " train *****" << endl;
+		train_one_epoch(net, criterion, optimizer,
+						train_images_ptr, train_labels_ptr,
+						num_train_images, batch_size, 
+						num_pixels);
+		validate(net, test_images_ptr, test_labels_ptr,
+				 num_test_images, batch_size, num_pixels);
+		optimizer.lr_ *= 0.1;
+	}
 	return 0;
 }

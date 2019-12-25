@@ -14,6 +14,7 @@ public:
 	Linear(index_t in_features, index_t out_features);
 	Node<float_t> forward(const Node<float_t>& input);
     NamedParamMap parameters(const std::string& name);
+    void reset_parameters(void);
 };
 
 }  // namespace nn

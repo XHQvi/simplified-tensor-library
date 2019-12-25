@@ -164,16 +164,16 @@ inline Node<Dtype> bmm(const Node<Dtype>& loperand, const Node<Dtype>& roperand)
 
 template<typename Dtype> NLLLossExp<Dtype> nll_loss(const Exp<Dtype>& src, const Exp<int_t>& index) {
 	CHECK_EQUAL(src.dim(), 2, OperandSizeNotMatch,
-		"BatchIndex is only used on 2D tensor as src, but got %dD tensor", src.dim());
+		"Nll Loss is only used on 2D tensor as src, but got %dD tensor", src.dim());
 	CHECK_EQUAL(index.dim(), 1, OperandSizeNotMatch,
-		"BatchIndex is only used on 1D tensor as index, but got %dD tensor", index.dim());
+		"Nll Loss is only used on 1D tensor as index, but got %dD tensor", index.dim());
 	return NLLLossExp<Dtype>(src, index);
 }
 template<typename Dtype> Node<Dtype> nll_loss(const Node<Dtype>& src, const Node<int_t>& index) {
 	CHECK_EQUAL(src.dim(), 2, OperandSizeNotMatch,
-		"BatchIndex is only used on 2D tensor as src, but got %dD tensor", src.dim());
+		"Nll Loss is only used on 2D tensor as src, but got %dD tensor", src.dim());
 	CHECK_EQUAL(index.dim(), 1, OperandSizeNotMatch,
-		"BatchIndex is only used on 1D tensor as index, but got %dD tensor", index.dim());
+		"Nll Loss is only used on 1D tensor as index, but got %dD tensor", index.dim());
 	return Node<Dtype>(new NLLLossExp<Dtype>(src.get_exp_ptr(), index.get_exp_ptr()));
 }
 

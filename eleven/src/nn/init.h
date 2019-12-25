@@ -8,9 +8,8 @@ namespace el {
 namespace nn {
 namespace init {
 
-
-void uniform_init(const NamedParamMap& params);
-void uniform_init(Node<float_t>& param);
+void uniform_init(const NamedParamMap& params, float_t a, float_t b);
+void uniform_init(Node<float_t>& param, float_t a, float_t b);
 
 void constant_init(const NamedParamMap& params, float_t value);
 void constant_init(Node<float_t>& param, float_t value);

@@ -25,6 +25,7 @@ public:
 
     Node<float_t> forward(const Node<float_t>& imgs);
     NamedParamMap parameters(const std::string& name);
+    void reset_parameters(void);
 
 private:
     index_t in_features_, out_features_;
