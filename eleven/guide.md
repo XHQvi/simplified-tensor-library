@@ -1,6 +1,6 @@
 ### 1. Tensor
 
-I learn the basic concepts about tensor from *Pytorch*. A tensor maintains four things, storage address, offset, stride and shape, which determine the tensor.
+I learn the basic concepts about tensor from *Pytorch*. A tensor maintains four things, storage address, offset, stride and shape, which entirely determine the tensor.
 
 ```c++
 struct Tensor {
@@ -26,7 +26,7 @@ I think `shared_ptr` can make me free of annoying `delete`, but I'm not sure thi
 $$
 Addr_k = dptr + \sum^{k-1}_{i = 0}stride[i] * idx[i]
 $$
-where $dptr$ is the tensor' storage address. With the concept of stride, many operation can be implemented efficiently. Take 3D tensor as example and explain with pseudo code.
+where $dptr$ is the tensor' storage address. With the concept of stride, many operation can be implemented efficiently. Take 3D tensor as example and explain this with pseudo code.
 
 - `b = a[:, i:j, :]` 
 
@@ -65,6 +65,15 @@ where $dptr$ is the tensor' storage address. With the concept of stride, many op
 
 ### 2. Template Expression
 
-At the beginning, I write codes of this part following the exactly same way as [mshadow's exp-template tutorial](https://github.com/dmlc/mshadow/tree/master/guide/exp-template). Then, with less consideration of User-friendly design, I simplified these codes by inherit.
+At the beginning, I write codes of this part following the exactly same way as [mshadow's exp-template tutorial](https://github.com/dmlc/mshadow/tree/master/guide/exp-template). Then, I simplified these codes by inherit, which means use dynamic binding instead of static binding. Static binding is more efficient, while dynamic binding will make code more simple.
 
 Matrix Multiply is different from element-wise operation, which should be implemented in a different way. But it's a pity that I implement MM in the same way as element-wise operation, which will cause unnecessary computation. I did so for make codes clear, and maybe fix it one day.
+
+### 3. Hierarchy of Abstraction
+
+Generally, there are two main levels, Tensor and Node.
+
+In Tensor level, from bottom to top, there are **Expression**, **Tensor**, and **Operation function**. This level has no relationship to computation graph. So when only use Tensor, the operations can't backward.
+
+In Node level, computation won't be processed, which is done in tensor level. Here dynamic computation graph is constructed when computation flow forwards. So all neural network modules are on base of Node.
+
